@@ -16,17 +16,8 @@ public class VolleyballAgent : Agent
     [HideInInspector]
     public Team team;
 
-    public enum Position
-    {
-        Front,
-        Back,
-        Generic
-    }
-
     [HideInInspector]
     public Rigidbody agentRb;
-
-    public Position position;
 
     [HideInInspector]
     public Vector3 initialPos;
@@ -35,7 +26,7 @@ public class VolleyballAgent : Agent
     private float m_Existential;
     private float m_LateralSpeed;
     private float m_ForwardSpeed;
-    private float m_JumpForce;
+    private float m_BaseJumpForce; // store base jump force for scaling
 
     private float m_BallTouch;
 
@@ -51,34 +42,28 @@ public class VolleyballAgent : Agent
     private bool spikeActive;
     private bool blockActive;
 
+
     public override void Initialize()
     {
         agentRb = GetComponent<Rigidbody>();
         agentRb.maxAngularVelocity = 500;
 
-        // Create spike collider
+        // Spike collider
         spikeCollider = gameObject.AddComponent<BoxCollider>();
-        spikeCollider.size = new Vector3(1f, 2f, 0.2f); // adjust to fit hand/arm
-        spikeCollider.center = new Vector3(0f, 1.5f, 0.5f); // forward and up
+        spikeCollider.size = new Vector3(0.5f, 1f, 0.2f);
+        spikeCollider.center = new Vector3(0f, 1.5f, 0.5f);
         spikeCollider.isTrigger = true;
         spikeCollider.enabled = false;
 
-        // Create block collider
+        // Block collider
         blockCollider = gameObject.AddComponent<BoxCollider>();
-        blockCollider.size = new Vector3(1f, 2f, 0.2f); // adjust to fit arms
-        blockCollider.center = new Vector3(0f, 1f, 0f); // raised above agent center
+        blockCollider.size = new Vector3(0.3f, 1f, 0.2f);
+        blockCollider.center = new Vector3(0f, 1f, 0f);
         blockCollider.isTrigger = true;
         blockCollider.enabled = false;
 
         var envController = GetComponentInParent<EnvironmentController>();
-        if (envController != null)
-        {
-            m_Existential = 1f / envController.MaxEnvironmentSteps;
-        }
-        else
-        {
-            m_Existential = 1f / MaxStep;
-        }
+        m_Existential = envController != null ? 1f / envController.MaxEnvironmentSteps : 1f / MaxStep;
 
         m_Settings = FindFirstObjectByType<VolleyballSettings>();
         m_ResetParams = Academy.Instance.EnvironmentParameters;
@@ -96,25 +81,10 @@ public class VolleyballAgent : Agent
             rotSign = -1f;
         }
 
-        // Assign speed and jump based on position
-        switch (position)
-        {
-            case Position.Front:
-                m_LateralSpeed = 1f;
-                m_ForwardSpeed = 1f;
-                m_JumpForce = 5f;
-                break;
-            case Position.Back:
-                m_LateralSpeed = 1f;
-                m_ForwardSpeed = 0.7f;
-                m_JumpForce = 4f;
-                break;
-            default:
-                m_LateralSpeed = 1f;
-                m_ForwardSpeed = 1f;
-                m_JumpForce = 4.5f;
-                break;
-        }
+        // Set default movement speeds (no role-based changes)
+        m_LateralSpeed = 1f;
+        m_ForwardSpeed = 1f;
+        m_BaseJumpForce = m_Settings.agentJumpForce; // store a base value
     }
 
 
@@ -126,6 +96,35 @@ public class VolleyballAgent : Agent
         spikeCollider.enabled = false;
         blockCollider.enabled = false;
     }
+
+    protected new void Awake()
+    {
+        base.Awake();
+
+        m_ResetParams = Academy.Instance.EnvironmentParameters;
+
+        // Ensure colliders exist
+        if (spikeCollider == null)
+        {
+            spikeCollider = gameObject.AddComponent<BoxCollider>();
+            spikeCollider.size = new Vector3(0.5f, 1f, 0.2f);
+            spikeCollider.center = new Vector3(0f, 1.5f, 0.5f);
+            spikeCollider.isTrigger = true;
+            spikeCollider.enabled = false;
+        }
+
+        if (blockCollider == null)
+        {
+            blockCollider = gameObject.AddComponent<BoxCollider>();
+            blockCollider.size = new Vector3(0.3f, 1f, 0.2f);
+            blockCollider.center = new Vector3(0f, 1f, 0f);
+            blockCollider.isTrigger = true;
+            blockCollider.enabled = false;
+        }
+    }
+
+
+
 
     public override void OnActionReceived(ActionBuffers actions)
     {
@@ -143,18 +142,15 @@ public class VolleyballAgent : Agent
 
         spikeActive = false;
         blockActive = false;
-
         bool jump = false;
 
         // Don't allow spike/block if ball is in mini-serve
         bool allowSpecial = true;
-        var ballController = FindFirstObjectByType<VolleyballBallController>();
+        var ballController = FindFirstObjectByType<VolleyballController>();
         if (ballController != null && ballController.InMiniServe)
-        {
             allowSpecial = false;
-        }
 
-        // Actions mapping
+        // Movement actions
         switch (act[0])
         {
             case 1: dirToGo += transform.forward * m_ForwardSpeed; break;
@@ -167,6 +163,7 @@ public class VolleyballAgent : Agent
             case 2: dirToGo += -transform.right * m_LateralSpeed; break;
         }
 
+        // Rotation
         switch (act[2])
         {
             case 1: rotateDir = -transform.up; break;
@@ -185,20 +182,30 @@ public class VolleyballAgent : Agent
         transform.Rotate(rotateDir, Time.deltaTime * 100f);
         agentRb.AddForce(dirToGo * m_Settings.agentRunSpeed, ForceMode.VelocityChange);
 
+        // Jump scales with current horizontal speed
         if (jump && IsGrounded())
         {
-            agentRb.AddForce(Vector3.up * m_JumpForce, ForceMode.VelocityChange);
+            float speedMultiplier = new Vector3(agentRb.linearVelocity.x, 0, agentRb.linearVelocity.z).magnitude;
+            float jumpForce = m_BaseJumpForce + speedMultiplier; // additive scaling
+            agentRb.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
         }
 
-        // Activate colliders if spike/block
+        // Activate spike/block colliders
         if (spikeActive || blockActive)
         {
             spikeCollider.enabled = spikeActive;
             blockCollider.enabled = blockActive;
             actionTimer = actionDuration;
+
+            // Optional: scale spike power by horizontal speed
+            if (spikeActive)
+            {
+                float spikePower = m_Settings.spikePower * (1f + new Vector3(agentRb.linearVelocity.x, 0, agentRb.linearVelocity.z).magnitude);
+                // Apply force to ball elsewhere in spike logic
+            }
         }
 
-        // Countdown for collider duration
+        // Countdown collider duration
         if (actionTimer > 0f)
         {
             actionTimer -= Time.deltaTime;
@@ -209,6 +216,7 @@ public class VolleyballAgent : Agent
             }
         }
     }
+
 
     private bool IsGrounded()
     {

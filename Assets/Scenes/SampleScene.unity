@@ -143,7 +143,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2047337}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -154,7 +154,7 @@ Transform:
   - {fileID: 2061330275}
   - {fileID: 1142913636}
   - {fileID: 251099484}
-  m_Father: {fileID: 1973943363}
+  m_Father: {fileID: 811082533}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &53624546
 GameObject:
@@ -170,7 +170,7 @@ GameObject:
   - component: {fileID: 53624548}
   m_Layer: 0
   m_Name: Line (3)
-  m_TagString: Untagged
+  m_TagString: floorBlue
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -279,7 +279,7 @@ GameObject:
   - component: {fileID: 148464627}
   m_Layer: 0
   m_Name: Line
-  m_TagString: Untagged
+  m_TagString: floorBlue
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -496,7 +496,7 @@ GameObject:
   - component: {fileID: 238374903}
   m_Layer: 0
   m_Name: RedAgent (1)
-  m_TagString: Untagged
+  m_TagString: redAgent
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1224,6 +1224,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 415955919}
+  - component: {fileID: 415955921}
+  - component: {fileID: 415955920}
   m_Layer: 0
   m_Name: AgentModel
   m_TagString: Untagged
@@ -1250,6 +1252,59 @@ Transform:
   - {fileID: 1388665904}
   m_Father: {fileID: 537204126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &415955920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 415955918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ee38376c2b9abd488a9e71b1e14252d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agentParameters:
+    maxStep: 0
+  hasUpgradedFromAgentParameters: 1
+  MaxStep: 0
+  team: 0
+  agentRb: {fileID: 0}
+  initialPos: {x: 0, y: 0, z: 0}
+  rotSign: 0
+  spikeCollider: {fileID: 0}
+  blockCollider: {fileID: 0}
+--- !u!114 &415955921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 415955918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d1c4e0b1822b495aa52bc52839ecb30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_BrainParameters:
+    VectorObservationSize: 1
+    NumStackedVectorObservations: 1
+    m_ActionSpec:
+      m_NumContinuousActions: 0
+      BranchSizes: 03000000030000000300000004000000
+    VectorActionSize: 03000000030000000300000004000000
+    VectorActionDescriptions: []
+    VectorActionSpaceType: 0
+    hasUpgradedBrainParametersWithActionSpec: 1
+  m_Model: {fileID: 0}
+  m_InferenceDevice: 0
+  m_BehaviorType: 1
+  m_BehaviorName: My Behavior
+  TeamId: 0
+  m_UseChildSensors: 1
+  m_UseChildActuators: 1
+  m_DeterministicInference: 0
+  m_ObservableAttributeHandling: 0
 --- !u!1 &458586584
 GameObject:
   m_ObjectHideFlags: 0
@@ -1350,7 +1405,7 @@ GameObject:
   - component: {fileID: 505506795}
   m_Layer: 0
   m_Name: RedAgent
-  m_TagString: Untagged
+  m_TagString: redAgent
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1459,7 +1514,7 @@ GameObject:
   - component: {fileID: 537204127}
   m_Layer: 0
   m_Name: BlueAgent (1)
-  m_TagString: Untagged
+  m_TagString: blueAgent
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1568,7 +1623,7 @@ GameObject:
   - component: {fileID: 547886204}
   m_Layer: 0
   m_Name: BlueAgent
-  m_TagString: Untagged
+  m_TagString: blueAgent
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1786,7 +1841,7 @@ GameObject:
   - component: {fileID: 574250189}
   m_Layer: 0
   m_Name: Line (1)
-  m_TagString: Untagged
+  m_TagString: floorBlue
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2134,7 +2189,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 682621576}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -2146,7 +2201,7 @@ Transform:
   - {fileID: 1001603780}
   - {fileID: 1189103899}
   - {fileID: 1020405563}
-  m_Father: {fileID: 1973943363}
+  m_Father: {fileID: 811082533}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &724616986
 GameObject:
@@ -2162,7 +2217,7 @@ GameObject:
   - component: {fileID: 724616988}
   m_Layer: 0
   m_Name: Line (2)
-  m_TagString: Untagged
+  m_TagString: floorRed
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2271,7 +2326,7 @@ GameObject:
   - component: {fileID: 767531876}
   m_Layer: 0
   m_Name: RedArea
-  m_TagString: Untagged
+  m_TagString: floorRed
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2365,6 +2420,39 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2047338}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &811082532
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 811082533}
+  m_Layer: 0
+  m_Name: PlayArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &811082533
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 811082532}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2047338}
+  - {fileID: 682621577}
+  m_Father: {fileID: 1973943363}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
@@ -2538,7 +2626,7 @@ GameObject:
   - component: {fileID: 853574811}
   m_Layer: 0
   m_Name: BlueArea
-  m_TagString: Untagged
+  m_TagString: floorBlue
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2682,7 +2770,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -3093,7 +3181,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -3201,7 +3289,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -3359,6 +3447,7 @@ GameObject:
   - component: {fileID: 1107543617}
   - component: {fileID: 1107543616}
   - component: {fileID: 1107543619}
+  - component: {fileID: 1107543620}
   m_Layer: 0
   m_Name: Volleyball
   m_TagString: ball
@@ -3482,6 +3571,30 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
+--- !u!114 &1107543620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1107543614}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3409916dd2c4df44c9e44ecc44a068b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  area: {fileID: 0}
+  envController: {fileID: 0}
+  passForce: 5
+  setForce: 2
+  spikeForce: 8
+  miniServeForce: 3
+  gravityScale: 1
+  lastHitterTeam: 0
+  touchesThisSide: 0
+  maxTouchesPerSide: 3
+  debugForceServe: 0
+  debugServingTeam: 0
 --- !u!1 &1128006400
 GameObject:
   m_ObjectHideFlags: 0
@@ -3897,7 +4010,7 @@ GameObject:
   - component: {fileID: 1162852681}
   m_Layer: 0
   m_Name: Line (4)
-  m_TagString: Untagged
+  m_TagString: floorRed
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4041,7 +4154,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -4270,7 +4383,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -4515,7 +4628,7 @@ GameObject:
   - component: {fileID: 1501966569}
   m_Layer: 0
   m_Name: Line (5)
-  m_TagString: Untagged
+  m_TagString: floorRed
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4780,7 +4893,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -5164,8 +5277,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1973943363}
+  - component: {fileID: 1973943364}
   m_Layer: 0
-  m_Name: Environment
+  m_Name: VolleyballFieldTwos
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5184,8 +5298,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2047338}
-  - {fileID: 682621577}
+  - {fileID: 811082533}
   - {fileID: 1107543615}
   - {fileID: 547886200}
   - {fileID: 505506794}
@@ -5193,6 +5306,22 @@ Transform:
   - {fileID: 238374902}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1973943364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1973943362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95a238109c1afe542b3315cf42883f90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MaxEnvironmentSteps: 25000
+  ball: {fileID: 0}
+  ballRb: {fileID: 0}
+  AgentsList: []
 --- !u!1 &2061330274
 GameObject:
   m_ObjectHideFlags: 0
@@ -5279,7 +5408,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3

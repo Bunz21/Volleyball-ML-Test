@@ -11,6 +11,8 @@ TagManager:
   - outofbounds
   - blueAgent
   - redAgent
+  - floorBlue
+  - floorRed
   layers:
   - Default
   - TransparentFX

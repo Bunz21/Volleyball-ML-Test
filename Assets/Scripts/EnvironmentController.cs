@@ -22,7 +22,7 @@ public class EnvironmentController : MonoBehaviour
     [HideInInspector] public Rigidbody ballRb;
     public List<PlayerInfo> AgentsList = new List<PlayerInfo>();
 
-    private VolleyballBallController ballController;
+    private VolleyballController ballController;
 
     private SimpleMultiAgentGroup m_BlueAgentGroup;
     private SimpleMultiAgentGroup m_RedAgentGroup;
@@ -32,7 +32,7 @@ public class EnvironmentController : MonoBehaviour
     void Start()
     {
         ballRb = ball.GetComponent<Rigidbody>();
-        ballController = ball.GetComponent<VolleyballBallController>();
+        ballController = ball.GetComponent<VolleyballController>();
 
         m_BlueAgentGroup = new SimpleMultiAgentGroup();
         m_RedAgentGroup = new SimpleMultiAgentGroup();

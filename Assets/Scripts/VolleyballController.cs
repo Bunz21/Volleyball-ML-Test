@@ -1,7 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
 
-public class VolleyballBallController : MonoBehaviour
+public class VolleyballController : MonoBehaviour
 {
     [Header("References")]
     public GameObject area;
@@ -20,9 +19,12 @@ public class VolleyballBallController : MonoBehaviour
     public int maxTouchesPerSide = 3;
 
     private Rigidbody rb;
-    public bool inMiniServe = false;
-    public bool InMiniServe => inMiniServe;
+    private bool inMiniServe = false;
+    private bool ballPassedOverNet = false;
 
+    [Header("Debug Options")]
+    public bool debugForceServe = true;
+    public Team debugServingTeam = Team.Blue;
 
     void Start()
     {
@@ -32,13 +34,9 @@ public class VolleyballBallController : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Optional: Apply custom gravity multiplier
         rb.AddForce(Physics.gravity * (gravityScale - 1f), ForceMode.Acceleration);
     }
 
-    /// <summary>
-    /// Called to apply a ball hit (pass, set, spike)
-    /// </summary>
     public void HitBall(Vector3 direction, HitType hitType, Team hittingTeam, float powerModifier = 1f)
     {
         float force = hitType switch
@@ -51,77 +49,112 @@ public class VolleyballBallController : MonoBehaviour
 
         force *= powerModifier;
 
-        rb.linearVelocity = Vector3.zero; // Reset current velocity
+        rb.linearVelocity = Vector3.zero;
         rb.AddForce(direction.normalized * force, ForceMode.VelocityChange);
 
         lastHitterTeam = hittingTeam;
 
         if (hitType != HitType.Block)
-        {
             touchesThisSide++;
-        }
     }
 
     void OnCollisionEnter(Collision col)
     {
-        // Detect floor zones for scoring
-        if (col.gameObject.CompareTag("FloorBlue"))
+        string tag = col.gameObject.tag;
+
+        // Ball hits floor
+        if (tag == "FloorBlue")
         {
-            envController.PointScored(Team.Red);
-            ResetBallMiniServe(Team.Red);
+            HandleFloorHit(Team.Red);
         }
-        else if (col.gameObject.CompareTag("FloorRed"))
+        else if (tag == "FloorRed")
         {
-            envController.PointScored(Team.Blue);
-            ResetBallMiniServe(Team.Blue);
+            HandleFloorHit(Team.Blue);
         }
 
-        // Detect net collision
-        if (col.gameObject.CompareTag("Net"))
+        // Ball hits out-of-bounds or antenna
+        else if (tag == "OutOfBounds" || tag == "Antenna")
         {
-            // Optional: could reduce velocity or trigger special effects
-        }
-
-        // Detect out zones
-        if (col.gameObject.CompareTag("OutZone"))
-        {
-            // Point to opposing team if ball went out
-            Team scoringTeam = (lastHitterTeam == Team.Blue) ? Team.Red : Team.Blue;
+            Team scoringTeam = GetOpposingTeam(lastHitterTeam);
             envController.PointScored(scoringTeam);
             ResetBallMiniServe(scoringTeam);
         }
+
+        // Ball passes over net
+        else if (tag == "OverNetDetector")
+        {
+            ballPassedOverNet = true;
+        }
+
+        // Ball hits OFB detector after passing over net
+        else if (tag == "OFBDetector")
+        {
+            if (ballPassedOverNet)
+            {
+                Team scoringTeam = GetOpposingTeam(lastHitterTeam);
+                envController.PointScored(scoringTeam);
+                ResetBallMiniServe(scoringTeam);
+            }
+            else
+            {
+                // If ball never passed over net but hit wall
+                Team scoringTeam = GetOpposingTeam(lastHitterTeam);
+                envController.PointScored(scoringTeam);
+                ResetBallMiniServe(scoringTeam);
+            }
+        }
     }
 
-    /// <summary>
-    /// Resets the ball to center and applies a small mini-serve force toward the team that scored
-    /// </summary>
-    public void ResetBallMiniServe(Team servingTeam)
+    void HandleFloorHit(Team fieldTeam)
+    {
+        if (ballPassedOverNet)
+        {
+            envController.PointScored(fieldTeam); // Scoring team
+        }
+        else
+        {
+            Team scoringTeam = GetOpposingTeam(lastHitterTeam);
+            envController.PointScored(scoringTeam);
+        }
+
+        ResetBallMiniServe(fieldTeam);
+    }
+
+    Team GetOpposingTeam(Team team) => team == Team.Blue ? Team.Red : Team.Blue;
+
+    public void ResetBallMiniServe(Team servingTeam = Team.Blue)
     {
         touchesThisSide = 0;
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-        transform.position = Vector3.zero + Vector3.up * 0.5f; // spawn slightly above floor
-
+        transform.position = Vector3.up * 0.5f;
         inMiniServe = true;
+        ballPassedOverNet = false;
 
-        // Push toward serving side
-        Vector3 serveDir = servingTeam == Team.Blue ? Vector3.forward : Vector3.back;
+        // Determine actual serving team
+        Team actualServingTeam;
+
+        if (debugForceServe)
+        {
+            actualServingTeam = debugServingTeam;
+        }
+        else
+        {
+            actualServingTeam = (lastHitterTeam == Team.Blue || lastHitterTeam == Team.Red)
+                ? servingTeam
+                : (Random.value < 0.5f ? Team.Blue : Team.Red); // random at start
+        }
+
+        Vector3 serveDir = actualServingTeam == Team.Blue ? Vector3.forward : Vector3.back;
         rb.AddForce(serveDir * miniServeForce, ForceMode.VelocityChange);
     }
 
-    /// <summary>
-    /// Reset counters after ball crosses to other side or after point
-    /// </summary>
     public void ResetTouches()
     {
         touchesThisSide = 0;
     }
 
-    public void EndMiniServe()
-    {
-        inMiniServe = false;
-    }
-
+    public bool InMiniServe => inMiniServe;
 }
 
 public enum HitType
