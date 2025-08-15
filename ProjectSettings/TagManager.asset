@@ -9,6 +9,8 @@ TagManager:
   - ofbdetector
   - overnetdetector
   - outofbounds
+  - blueAgent
+  - redAgent
   layers:
   - Default
   - TransparentFX
