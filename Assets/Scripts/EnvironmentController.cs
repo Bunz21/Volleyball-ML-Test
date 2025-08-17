@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.MLAgents;
+using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 
 public enum Team
@@ -22,6 +24,11 @@ public class EnvironmentController : MonoBehaviour
 {
     int ballSpawnSide;
 
+    // Add near top of EnvironmentController
+    [SerializeField] float velocityRewardForwardWeight = 0.02f;  // per m/s toward opponent
+    [SerializeField] float velocityRewardDownWeight = 0.03f;  // per m/s downward
+    [SerializeField] float velocityRewardMax = 0.4f;   // cap
+
     VolleyballSettings volleyballSettings;
 
     public VolleyballAgent blueAgent;
@@ -36,7 +43,7 @@ public class EnvironmentController : MonoBehaviour
     Rigidbody redAgentRb;
 
     public GameObject ball;
-    Rigidbody ballRb;
+    [SerializeField] Rigidbody ballRb;
 
     public GameObject blueGoal;
     public GameObject redGoal;
@@ -60,6 +67,10 @@ public class EnvironmentController : MonoBehaviour
     // To prevent multi-count from the same physics frame / quick recontacts
     [SerializeField] float touchCooldown = 0.10f;        // seconds
     private Dictionary<VolleyballAgent, float> lastTouchTime = new Dictionary<VolleyballAgent, float>();
+    void Awake()
+    {
+        if (ballRb == null && ball != null) ballRb = ball.GetComponent<Rigidbody>();
+    }
 
     void Start()
     {
@@ -93,7 +104,7 @@ public class EnvironmentController : MonoBehaviour
         lastHitter = team;
     }
 
-    private void AwardFaultAgainstLastHitter()
+    public void AwardFaultAgainstLastHitter()
     {
         if (lastHitter == Team.Blue)
         {
@@ -198,7 +209,19 @@ public class EnvironmentController : MonoBehaviour
 
                         if (prevHitterAgent != null && prevHitterAgent.teamId == lastHitterAgent.teamId && prevHitterAgent != lastHitterAgent)
                         {
-                            prevHitterAgent.AddReward(0.2f); // tune
+                            prevHitterAgent.AddReward(0.1f); // tune
+                        }
+
+                        // >>> velocity-based bonus for Blue
+                        if (ballRb != null)
+                        {
+                            Vector3 v = ballRb.linearVelocity;
+                            float forward = Mathf.Max(0f, Vector3.Dot(v, Vector3.forward)); // +Z toward Red
+                            float down = Mathf.Max(0f, -v.y);                             // only downward
+                            float bonus = velocityRewardForwardWeight * forward
+                                          + velocityRewardDownWeight * down;
+                            bonus = Mathf.Min(bonus, velocityRewardMax);
+                            if (bonus > 0f) blueAgent.AddReward(bonus);
                         }
 
                         // Visual feedback (Blue scored)
@@ -228,8 +251,21 @@ public class EnvironmentController : MonoBehaviour
 
                         if (prevHitterAgent != null && prevHitterAgent.teamId == lastHitterAgent.teamId && prevHitterAgent != lastHitterAgent)
                         {
-                            prevHitterAgent.AddReward(0.2f); // tune
+                            prevHitterAgent.AddReward(0.1f); // tune
                         }
+
+                        // >>> velocity-based bonus for Red
+                        if (ballRb != null)
+                        {
+                            Vector3 v = ballRb.linearVelocity;
+                            float forward = Mathf.Max(0f, Vector3.Dot(v, Vector3.back)); // -Z toward Blue
+                            float down = Mathf.Max(0f, -v.y);
+                            float bonus = velocityRewardForwardWeight * forward
+                                          + velocityRewardDownWeight * down;
+                            bonus = Mathf.Min(bonus, velocityRewardMax);
+                            if (bonus > 0f) redAgent.AddReward(bonus);
+                        }
+
 
                         // Visual feedback (Red scored)
                         StartCoroutine(GoalScoredSwapGroundMaterial(volleyballSettings.redGoalMaterial, RenderersList, 0.5f));
@@ -258,11 +294,35 @@ public class EnvironmentController : MonoBehaviour
 
                     if (lastHitter == Team.Red)
                     {
-                        redAgent.AddReward(0.1f);
+                        switch (touchesRed)
+                        {
+                            case 1:
+                            default:
+                                redAgent.AddReward(0.1f);
+                                break;
+                            case 2:
+                                redAgent.AddReward(0.2f);
+                                break;
+                            case 3:
+                                redAgent.AddReward(0.3f);
+                                break;
+                        }
                     }
                     else if (lastHitter == Team.Blue)
                     {
-                        blueAgent.AddReward(0.1f);
+                        switch (touchesBlue)
+                        {
+                            case 1:
+                            default:
+                                blueAgent.AddReward(0.1f);
+                                break;
+                            case 2:
+                                blueAgent.AddReward(0.2f);
+                                break;
+                            case 3:
+                                blueAgent.AddReward(0.3f);
+                                break;
+                        }
                     }
                     break;
                 }

@@ -112,6 +112,19 @@ public class VolleyballAgent : Agent
         {
             envController.RegisterTouch(this);  // <- NEW
         }
+        //if (teamId == Team.Blue)
+        //{
+        //    if (c.collider.CompareTag("floorRed"))
+        //    {
+        //        AddReward(-0.005f);
+        //    }
+        //} else if (teamId == Team.Red)
+        //{
+        //    if (c.collider.CompareTag("floorBlue"))
+        //    {
+        //        AddReward(-0.005f);
+        //    }
+        //}
     }
 
 
@@ -129,6 +142,12 @@ public class VolleyballAgent : Agent
     /// </summary>
     public void MoveAgent(ActionSegment<int> act)
     {
+        if (volleyballSettings == null || agentRb == null)
+        {
+            Debug.LogError("[VolleyballAgent] Null refs in MoveAgent (settings or rb).", this);
+            return;
+        }
+
         var grounded = CheckIfGrounded();
         var dirToGo = Vector3.zero;
         var rotateDir = Vector3.zero;
@@ -159,7 +178,7 @@ public class VolleyballAgent : Agent
             }
 
         transform.Rotate(rotateDir, Time.fixedDeltaTime * 200f);
-        agentRb.AddForce(agentRot * dirToGo * volleyballSettings.agentRunSpeed,
+        agentRb.AddForce(dirToGo * volleyballSettings.agentRunSpeed,
             ForceMode.VelocityChange);
 
         if (jumpingTime > 0f)
@@ -167,7 +186,7 @@ public class VolleyballAgent : Agent
             jumpTargetPos =
                 new Vector3(agentRb.position.x,
                     jumpStartingPos.y + volleyballSettings.agentJumpHeight,
-                    agentRb.position.z) + agentRot * dirToGo;
+                    agentRb.position.z) + dirToGo;
 
             MoveTowards(jumpTargetPos, agentRb, volleyballSettings.agentJumpVelocity,
                 volleyballSettings.agentJumpVelocityMaxChange);
