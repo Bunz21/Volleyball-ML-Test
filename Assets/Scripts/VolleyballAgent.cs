@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 public class VolleyballAgent : Agent
 {
     [SerializeField] private GameObject area;
+    [SerializeField] private VolleyballAgent teammate; // assign in Inspector, or find at runtime
     Rigidbody agentRb;
     BehaviorParameters behaviorParameters;
     public Team teamId;
@@ -15,7 +16,6 @@ public class VolleyballAgent : Agent
     // To get ball's location for observations
     public GameObject ball;
     Rigidbody ballRb;
-
     [SerializeField] private VolleyballSettings volleyballSettings; // allow Inspector hookup
     EnvironmentController envController;
 
@@ -32,6 +32,18 @@ public class VolleyballAgent : Agent
     {
         envController = area.GetComponent<EnvironmentController>();
     }
+
+    protected new void Awake()
+    {
+        if (teammate == null)
+        {
+            // naive: find agents with same team and not self
+            var all = FindFirstObjectByType<VolleyballAgent>();
+            foreach (var a in envController.AgentsList)
+                if (a != this && a.teamId == teamId) { teammate = a; break; }
+        }
+    }
+
 
     public override void Initialize()
     {
@@ -286,16 +298,52 @@ public class VolleyballAgent : Agent
         );
         Vector3 dirToBall = toBall.sqrMagnitude > 1e-6f ? toBall.normalized : Vector3.zero;
         sensor.AddObservation(dirToBall);                        // 3 floats
-        sensor.AddObservation(toBall.magnitude);                 // 1 float
+        float maxDist = 20f;  // based on roof height
+        sensor.AddObservation(Mathf.Clamp01(toBall.magnitude / maxDist));
+
 
         // Agent velocity (use Rigidbody.velocity, not linearVelocity)
-        sensor.AddObservation(agentRb.linearVelocity);                 // 3 floats
+        sensor.AddObservation(agentRb.linearVelocity / 10f);     // 3 floats
 
         // Ball velocity (mirror x/z with agentRot for symmetry)
-        Vector3 bv = ballRb.linearVelocity;
+        Vector3 bv = ballRb.linearVelocity / 20f;
         sensor.AddObservation(bv.y);                             // 1
         sensor.AddObservation(bv.z * agentRot);                  // 1
         sensor.AddObservation(bv.x * agentRot);                  // 1
+
+        if (teammate != null)
+        {
+            Vector3 toMate = new Vector3(
+                (teammate.transform.position.x - transform.position.x) * agentRot,
+                (teammate.transform.position.y - transform.position.y),
+                (teammate.transform.position.z - transform.position.z) * agentRot
+            );
+
+            Vector3 mateDir = toMate.sqrMagnitude > 1e-6f ? toMate.normalized : Vector3.zero;
+            sensor.AddObservation(mateDir); // 3
+
+            Vector3 mateVel = teammate.GetComponent<Rigidbody>().linearVelocity / 10f;
+            // mirror x/z for symmetry
+            sensor.AddObservation(mateVel.y);
+            sensor.AddObservation(mateVel.z * agentRot);
+            sensor.AddObservation(mateVel.x * agentRot);
+        }
+        else
+        {
+            // pad if null (keeps obs size constant)
+            sensor.AddObservation(Vector3.zero); // dir
+            sensor.AddObservation(0f); // vy
+            sensor.AddObservation(0f); // vz
+            sensor.AddObservation(0f); // vx
+        }
+
+        // Touches-left hint (normalized 0..1)
+        // You can set this from EnvironmentController onto each agent before DecideAction
+        float touchesUsed = (teamId == Team.Blue) ? envController.touchesBlue : envController.touchesRed;
+        sensor.AddObservation(Mathf.Clamp01(touchesUsed / 3f));
+
+        // Grounded flag
+        sensor.AddObservation(CheckIfGrounded() ? 1f : 0f);
     }
 
 
