@@ -2,19 +2,20 @@ using UnityEngine;
 
 public class VolleyballSettings : MonoBehaviour
 {
+    [Header("Agent Settings")]
+    public float agentRunSpeed = 1.5f;
+    public float agentJumpHeight = 2.75f;
+    public float agentJumpVelocity = 777;
+    public float agentJumpVelocityMaxChange = 10;
+
+    // Slows down strafe & backward movement
+    public float speedReductionFactor = 0.75f;
+
     [Header("Team Materials")]
-    public Material redMaterial;
-    public Material blueMaterial;
+    public Material blueGoalMaterial;
+    public Material redGoalMaterial;
+    public Material defaultMaterial;
 
-    [Header("Training Options")]
-    public bool randomizePlayersTeamForTraining = true;
-
-    [Header("Agent Movement")]
-    public float agentRunSpeed = 5f;
-
-    [Header("Volleyball-specific Settings")]
-    public float agentJumpForce = 4.8f;  // Default jump force
-    public float spikePower = 8f;       // Force applied when spiking
-    public float blockPower = 2f;       // Force applied when spiking
-    public float blockHeight = 2f;      // Height of block collider
+    // This is a downward force applied when falling to make jumps look less floaty
+    public float fallingForce = 100;
 }

@@ -13,6 +13,7 @@ TagManager:
   - redAgent
   - floorBlue
   - floorRed
+  - walkableSurface
   layers:
   - Default
   - TransparentFX

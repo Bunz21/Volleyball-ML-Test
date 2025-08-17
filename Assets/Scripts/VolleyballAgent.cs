@@ -3,287 +3,309 @@ using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Policies;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
-
-public enum Team
-{
-    Blue = 0,
-    Red = 1
-}
+using UnityEngine.InputSystem;
 
 public class VolleyballAgent : Agent
 {
+    [SerializeField] private GameObject area;
+    Rigidbody agentRb;
+    BehaviorParameters behaviorParameters;
+    public Team teamId;
 
-    [HideInInspector]
-    public Team team;
+    // To get ball's location for observations
+    public GameObject ball;
+    Rigidbody ballRb;
 
-    [HideInInspector]
-    public Rigidbody agentRb;
+    [SerializeField] private VolleyballSettings volleyballSettings; // allow Inspector hookup
+    EnvironmentController envController;
 
-    [HideInInspector]
-    public Vector3 initialPos;
-    public float rotSign;
+    // Controls jump behavior
+    float jumpingTime;
+    Vector3 jumpTargetPos;
+    Vector3 jumpStartingPos;
+    float agentRot;
 
-    private float m_Existential;
-    private float m_LateralSpeed;
-    private float m_ForwardSpeed;
-    private float m_BaseJumpForce; // store base jump force for scaling
+    public Collider[] hitGroundColliders = new Collider[3];
+    EnvironmentParameters resetParams;
 
-    private float m_BallTouch;
-
-    private float actionDuration = 0.2f; // seconds
-    private float actionTimer = 0f;
-
-    EnvironmentParameters m_ResetParams;
-    VolleyballSettings m_Settings;
-
-    // Colliders for spike/block
-    public BoxCollider spikeCollider;
-    public BoxCollider blockCollider;
-    private bool spikeActive;
-    private bool blockActive;
-
+    void Start()
+    {
+        envController = area.GetComponent<EnvironmentController>();
+    }
 
     public override void Initialize()
     {
+        volleyballSettings = FindFirstObjectByType<VolleyballSettings>();
+        behaviorParameters = gameObject.GetComponent<BehaviorParameters>();
+
         agentRb = GetComponent<Rigidbody>();
-        agentRb.maxAngularVelocity = 500;
+        ballRb = ball.GetComponent<Rigidbody>();
 
-        // Spike collider
-        spikeCollider = gameObject.AddComponent<BoxCollider>();
-        spikeCollider.size = new Vector3(0.5f, 1f, 0.2f);
-        spikeCollider.center = new Vector3(0f, 1.5f, 0.5f);
-        spikeCollider.isTrigger = true;
-        spikeCollider.enabled = false;
-
-        // Block collider
-        blockCollider = gameObject.AddComponent<BoxCollider>();
-        blockCollider.size = new Vector3(0.3f, 1f, 0.2f);
-        blockCollider.center = new Vector3(0f, 1f, 0f);
-        blockCollider.isTrigger = true;
-        blockCollider.enabled = false;
-
-        var envController = GetComponentInParent<EnvironmentController>();
-        m_Existential = envController != null ? 1f / envController.MaxEnvironmentSteps : 1f / MaxStep;
-
-        m_Settings = FindFirstObjectByType<VolleyballSettings>();
-        m_ResetParams = Academy.Instance.EnvironmentParameters;
-
-        if (GetComponent<BehaviorParameters>().TeamId == (int)Team.Blue)
+        // for symmetry between player side
+        if (teamId == Team.Blue)
         {
-            team = Team.Blue;
-            initialPos = transform.position + new Vector3(-5f, 0.5f, 0);
-            rotSign = 1f;
+            agentRot = -1;
         }
         else
         {
-            team = Team.Red;
-            initialPos = transform.position + new Vector3(5f, 0.5f, 0);
-            rotSign = -1f;
+            agentRot = 1;
         }
 
-        // Set default movement speeds (no role-based changes)
-        m_LateralSpeed = 1f;
-        m_ForwardSpeed = 1f;
-        m_BaseJumpForce = m_Settings.agentJumpForce; // store a base value
+        resetParams = Academy.Instance.EnvironmentParameters;
     }
 
-
-    public override void OnEpisodeBegin()
+    /// <summary>
+    /// Moves  a rigidbody towards a position smoothly.
+    /// </summary>
+    /// <param name="targetPos">Target position.</param>
+    /// <param name="rb">The rigidbody to be moved.</param>
+    /// <param name="targetVel">The velocity to target during the
+    ///  motion.</param>
+    /// <param name="maxVel">The maximum velocity posible.</param>
+    void MoveTowards(
+        Vector3 targetPos, Rigidbody rb, float targetVel, float maxVel)
     {
-        m_BallTouch = m_ResetParams.GetWithDefault("ball_touch", 0);
-        spikeActive = false;
-        blockActive = false;
-        spikeCollider.enabled = false;
-        blockCollider.enabled = false;
-    }
-
-    protected new void Awake()
-    {
-        base.Awake();
-
-        m_ResetParams = Academy.Instance.EnvironmentParameters;
-
-        // Ensure colliders exist
-        if (spikeCollider == null)
+        var moveToPos = targetPos - rb.worldCenterOfMass;
+        var velocityTarget = Time.fixedDeltaTime * targetVel * moveToPos;
+        if (float.IsNaN(velocityTarget.x) == false)
         {
-            spikeCollider = gameObject.AddComponent<BoxCollider>();
-            spikeCollider.size = new Vector3(0.5f, 1f, 0.2f);
-            spikeCollider.center = new Vector3(0f, 1.5f, 0.5f);
-            spikeCollider.isTrigger = true;
-            spikeCollider.enabled = false;
-        }
-
-        if (blockCollider == null)
-        {
-            blockCollider = gameObject.AddComponent<BoxCollider>();
-            blockCollider.size = new Vector3(0.3f, 1f, 0.2f);
-            blockCollider.center = new Vector3(0f, 1f, 0f);
-            blockCollider.isTrigger = true;
-            blockCollider.enabled = false;
+            rb.linearVelocity = Vector3.MoveTowards(
+                rb.linearVelocity, velocityTarget, maxVel);
         }
     }
 
-
-
-
-    public override void OnActionReceived(ActionBuffers actions)
+    /// <summary>
+    /// Check if agent is on the ground to enable/disable jumping
+    /// </summary>
+    public bool CheckIfGrounded()
     {
-        var discreteActions = actions.DiscreteActions;
-        MoveAgent(discreteActions);
-
-        // Existential reward
-        AddReward(m_Existential);
-    }
-
-    private void MoveAgent(ActionSegment<int> act)
-    {
-        Vector3 dirToGo = Vector3.zero;
-        Vector3 rotateDir = Vector3.zero;
-
-        spikeActive = false;
-        blockActive = false;
-        bool jump = false;
-
-        // Don't allow spike/block if ball is in mini-serve
-        bool allowSpecial = true;
-        var ballController = FindFirstObjectByType<VolleyballController>();
-        if (ballController != null && ballController.InMiniServe)
-            allowSpecial = false;
-
-        // Movement actions
-        switch (act[0])
+        hitGroundColliders = new Collider[3];
+        var o = gameObject;
+        Physics.OverlapBoxNonAlloc(
+            o.transform.localPosition + new Vector3(0, -0.05f, 0),
+            new Vector3(0.95f / 2f, 0.5f, 0.95f / 2f),
+            hitGroundColliders,
+            o.transform.rotation);
+        var grounded = false;
+        foreach (var col in hitGroundColliders)
         {
-            case 1: dirToGo += transform.forward * m_ForwardSpeed; break;
-            case 2: dirToGo += -transform.forward * m_ForwardSpeed; break;
-        }
-
-        switch (act[1])
-        {
-            case 1: dirToGo += transform.right * m_LateralSpeed; break;
-            case 2: dirToGo += -transform.right * m_LateralSpeed; break;
-        }
-
-        // Rotation
-        switch (act[2])
-        {
-            case 1: rotateDir = -transform.up; break;
-            case 2: rotateDir = transform.up; break;
-        }
-
-        // Jump / Spike / Block
-        switch (act[3])
-        {
-            case 1: jump = true; break;
-            case 2: if (allowSpecial) spikeActive = true; break;
-            case 3: if (allowSpecial) blockActive = true; break;
-        }
-
-        // Apply rotation and movement
-        transform.Rotate(rotateDir, Time.deltaTime * 100f);
-        agentRb.AddForce(dirToGo * m_Settings.agentRunSpeed, ForceMode.VelocityChange);
-
-        // Jump scales with current horizontal speed
-        if (jump && IsGrounded())
-        {
-            float speedMultiplier = new Vector3(agentRb.linearVelocity.x, 0, agentRb.linearVelocity.z).magnitude;
-            float jumpForce = m_BaseJumpForce + speedMultiplier; // additive scaling
-            agentRb.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
-        }
-
-        // Activate spike/block colliders
-        if (spikeActive || blockActive)
-        {
-            spikeCollider.enabled = spikeActive;
-            blockCollider.enabled = blockActive;
-            actionTimer = actionDuration;
-
-            // Optional: scale spike power by horizontal speed
-            if (spikeActive)
+            if (col != null && col.transform != transform &&
+                (col.CompareTag("outofbounds") ||
+                 col.CompareTag("floorRed") ||
+                 col.CompareTag("floorBlue")))
             {
-                float spikePower = m_Settings.spikePower * (1f + new Vector3(agentRb.linearVelocity.x, 0, agentRb.linearVelocity.z).magnitude);
-                // Apply force to ball elsewhere in spike logic
+                grounded = true; //then we're grounded
+                break;
             }
         }
+        return grounded;
+    }
 
-        // Countdown collider duration
-        if (actionTimer > 0f)
+    /// <summary>
+    /// Called when agent collides with the ball
+    /// </summary>
+    // Called when agent collides with the ball
+    void OnCollisionEnter(Collision c)
+    {
+        if (!c.collider.CompareTag("ball")) return;
+        if (envController != null)
         {
-            actionTimer -= Time.deltaTime;
-            if (actionTimer <= 0f)
-            {
-                spikeCollider.enabled = false;
-                blockCollider.enabled = false;
-            }
+            envController.RegisterTouch(this);  // <- NEW
         }
     }
 
 
-    private bool IsGrounded()
+    /// <summary>
+    /// Starts the jump sequence
+    /// </summary>
+    public void Jump()
     {
-        return Physics.Raycast(transform.position, Vector3.down, 0.55f);
+        jumpingTime = 0.2f;
+        jumpStartingPos = agentRb.position;
     }
 
-    public void StartBlock()
+    /// <summary>
+    /// Resolves the agent movement
+    /// </summary>
+    public void MoveAgent(ActionSegment<int> act)
     {
-        blockCollider.enabled = true;
-    }
+        var grounded = CheckIfGrounded();
+        var dirToGo = Vector3.zero;
+        var rotateDir = Vector3.zero;
+        var dirToGoForwardAction = act[0];
+        var rotateDirAction = act[1];
+        var dirToGoSideAction = act[2];
+        var jumpAction = act[3];
 
-    public void EndBlock()
-    {
-        blockCollider.enabled = false;
-    }
+        if (dirToGoForwardAction == 1)
+            dirToGo = (grounded ? 1f : 0.5f) * transform.forward * 1f;
+        else if (dirToGoForwardAction == 2)
+            dirToGo = (grounded ? 1f : 0.5f) * transform.forward * volleyballSettings.speedReductionFactor * -1f;
 
+        if (rotateDirAction == 1)
+            rotateDir = transform.up * -1f;
+        else if (rotateDirAction == 2)
+            rotateDir = transform.up * 1f;
 
-    void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("ball"))
+        if (dirToGoSideAction == 1)
+            dirToGo = (grounded ? 1f : 0.5f) * transform.right * volleyballSettings.speedReductionFactor * -1f;
+        else if (dirToGoSideAction == 2)
+            dirToGo = (grounded ? 1f : 0.5f) * transform.right * volleyballSettings.speedReductionFactor;
+
+        if (jumpAction == 1)
+            if (((jumpingTime <= 0f) && grounded))
+            {
+                Jump();
+            }
+
+        transform.Rotate(rotateDir, Time.fixedDeltaTime * 200f);
+        agentRb.AddForce(agentRot * dirToGo * volleyballSettings.agentRunSpeed,
+            ForceMode.VelocityChange);
+
+        if (jumpingTime > 0f)
         {
-            Rigidbody ballRb = other.attachedRigidbody;
+            jumpTargetPos =
+                new Vector3(agentRb.position.x,
+                    jumpStartingPos.y + volleyballSettings.agentJumpHeight,
+                    agentRb.position.z) + agentRot * dirToGo;
 
-            if (spikeActive)
-            {
-                Vector3 spikeDir = (Vector3.up + transform.forward).normalized;
-                ballRb.AddForce(spikeDir * m_Settings.spikePower, ForceMode.VelocityChange);
-                AddReward(0.3f * m_BallTouch);
-            }
+            MoveTowards(jumpTargetPos, agentRb, volleyballSettings.agentJumpVelocity,
+                volleyballSettings.agentJumpVelocityMaxChange);
+        }
 
-            if (blockActive)
-            {
-                Vector3 blockDir = (Vector3.up + -transform.forward).normalized;
-                ballRb.AddForce(blockDir * m_Settings.blockPower, ForceMode.VelocityChange);
-                AddReward(0.2f * m_BallTouch);
-            }
+        if (!(jumpingTime > 0f) && !grounded)
+        {
+            agentRb.AddForce(
+                Vector3.down * volleyballSettings.fallingForce, ForceMode.Acceleration);
+        }
+
+        if (jumpingTime > 0f)
+        {
+            jumpingTime -= Time.fixedDeltaTime;
         }
     }
 
+    ///// <summary>
+    ///// Resolves the agent movement
+    ///// </summary>
+    //public void MoveAgent(ActionSegment<int> act)
+    //{
+    //    var grounded = CheckIfGrounded();
+    //    var dirToGo = Vector3.zero;
+    //    var rotateDir = Vector3.zero;
+    //    var dirToGoForwardAction = act[0];
+    //    var rotateDirAction = act[1];
+    //    var dirToGoSideAction = act[2];
+    //    var jumpAction = act[3];
+
+    //    if (dirToGoForwardAction == 1)
+    //        dirToGo = (grounded ? 1f : 0.5f) * transform.forward * 1f;
+    //    else if (dirToGoForwardAction == 2)
+    //        dirToGo = (grounded ? 1f : 0.5f) * transform.forward * volleyballSettings.speedReductionFactor * -1f;
+
+    //    if (rotateDirAction == 1)
+    //        rotateDir = transform.up * -1f;
+    //    else if (rotateDirAction == 2)
+    //        rotateDir = transform.up * 1f;
+
+    //    if (dirToGoSideAction == 1)
+    //        dirToGo = (grounded ? 1f : 0.5f) * transform.right * volleyballSettings.speedReductionFactor * -1f;
+    //    else if (dirToGoSideAction == 2)
+    //        dirToGo = (grounded ? 1f : 0.5f) * transform.right * volleyballSettings.speedReductionFactor;
+
+    //    if (jumpAction == 1)
+    //        if (((jumpingTime <= 0f) && grounded))
+    //        {
+    //            Jump();
+    //        }
+
+    //    transform.Rotate(rotateDir, Time.fixedDeltaTime * 200f);
+    //    agentRb.AddForce(dirToGo * volleyballSettings.agentRunSpeed,
+    //        ForceMode.VelocityChange);
+
+    //    if (jumpingTime > 0f)
+    //    {
+    //        jumpTargetPos =
+    //            new Vector3(agentRb.position.x,
+    //                jumpStartingPos.y + volleyballSettings.agentJumpHeight,
+    //                agentRb.position.z) + dirToGo;
+
+    //        MoveTowards(jumpTargetPos, agentRb, volleyballSettings.agentJumpVelocity,
+    //            volleyballSettings.agentJumpVelocityMaxChange);
+    //    }
+
+    //    if (!(jumpingTime > 0f) && !grounded)
+    //    {
+    //        agentRb.AddForce(
+    //            Vector3.down * volleyballSettings.fallingForce, ForceMode.Acceleration);
+    //    }
+
+    //    if (jumpingTime > 0f)
+    //    {
+    //        jumpingTime -= Time.fixedDeltaTime;
+    //    }
+    //}
+
+    public override void OnActionReceived(ActionBuffers actionBuffers)
+    {
+        AddReward(-0.0005f);
+        MoveAgent(actionBuffers.DiscreteActions);
+    }
+
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        // 1) Proper yaw in [-1, 1] instead of quaternion.y
+        float yawDeg = transform.eulerAngles.y;                  // 0..360
+        float yawNorm = Mathf.DeltaAngle(0f, yawDeg) / 180f;     // -1..1
+        sensor.AddObservation(yawNorm);                          // 1 float
+
+        // 2) Direction to ball (mirrored by agentRot) + distance
+        Vector3 toBall = new Vector3(
+            (ballRb.position.x - transform.position.x) * agentRot,
+            (ballRb.position.y - transform.position.y),
+            (ballRb.position.z - transform.position.z) * agentRot
+        );
+        Vector3 dirToBall = toBall.sqrMagnitude > 1e-6f ? toBall.normalized : Vector3.zero;
+        sensor.AddObservation(dirToBall);                        // 3 floats
+        sensor.AddObservation(toBall.magnitude);                 // 1 float
+
+        // Agent velocity (use Rigidbody.velocity, not linearVelocity)
+        sensor.AddObservation(agentRb.linearVelocity);                 // 3 floats
+
+        // Ball velocity (mirror x/z with agentRot for symmetry)
+        Vector3 bv = ballRb.linearVelocity;
+        sensor.AddObservation(bv.y);                             // 1
+        sensor.AddObservation(bv.z * agentRot);                  // 1
+        sensor.AddObservation(bv.x * agentRot);                  // 1
+    }
+
+
+    // For human controller
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        var discreteActionsOut = actionsOut.DiscreteActions;
+        var da = actionsOut.DiscreteActions;
 
-        // Movement
-        if (Input.GetKey(KeyCode.W)) discreteActionsOut[0] = 1;
-        if (Input.GetKey(KeyCode.S)) discreteActionsOut[0] = 2;
-        if (Input.GetKey(KeyCode.E)) discreteActionsOut[1] = 1;
-        if (Input.GetKey(KeyCode.Q)) discreteActionsOut[1] = 2;
-        if (Input.GetKey(KeyCode.A)) discreteActionsOut[2] = 1;
-        if (Input.GetKey(KeyCode.D)) discreteActionsOut[2] = 2;
+        // zero everything first (important when mixing keys)
+        for (int i = 0; i < da.Length; i++) da[i] = 0;
 
-        // Jump / Spike / Block
-        if (Input.GetKey(KeyCode.Space)) discreteActionsOut[3] = 1; // Jump
-        if (Input.GetKey(KeyCode.LeftShift)) discreteActionsOut[3] = 2; // Spike
-        if (Input.GetKey(KeyCode.LeftControl)) discreteActionsOut[3] = 3; // Block
+        var k = Keyboard.current;
+        if (k == null) return; // no keyboard attached
+
+        // rotate (branch 1)
+        if (k.dKey.isPressed) da[1] = 2;          // rotate right
+        else if (k.aKey.isPressed) da[1] = 1;     // rotate left
+
+        // forward/back (branch 0)
+        if (k.wKey.isPressed || k.upArrowKey.isPressed) da[0] = 1;     // forward
+        else if (k.sKey.isPressed || k.downArrowKey.isPressed) da[0] = 2; // back
+
+        // strafe (branch 2)
+        if (k.rightArrowKey.isPressed) da[2] = 2; // move right
+        else if (k.leftArrowKey.isPressed) da[2] = 1; // move left
+
+        // jump/spike/block (branch 3)
+        if (k.spaceKey.isPressed) da[3] = 1;      // jump
+                                                  // (extend with other keys for spike/block if needed)
     }
 
-    private void Update()
-    {
-        if (actionTimer > 0f)
-        {
-            actionTimer -= Time.deltaTime;
-            if (actionTimer <= 0f)
-            {
-                spikeCollider.enabled = false;
-                blockCollider.enabled = false;
-            }
-        }
-    }
 }
