@@ -2,9 +2,9 @@ behaviors:
   Volleyball:
     trainer_type: ppo
     hyperparameters:
-      batch_size: 2048
+      batch_size: 1024
       buffer_size: 20480
-      learning_rate: 0.0002
+      learning_rate: 0.0003
       beta: 0.003
       epsilon: 0.15
       lambd: 0.93

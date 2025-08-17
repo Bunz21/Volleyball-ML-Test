@@ -62,7 +62,6 @@ public class EnvironmentController : MonoBehaviour
     public int touchesRed = 0;
     public Team lastHitterTeam = Team.Default;              // or a Default/None if you have one
     public VolleyballAgent lastHitterAgent = null;
-    private VolleyballAgent prevHitterAgent = null;
 
     // To prevent multi-count from the same physics frame / quick recontacts
     [SerializeField] float touchCooldown = 0.10f;        // seconds
@@ -161,7 +160,6 @@ public class EnvironmentController : MonoBehaviour
 
         // New legal touch: update last hitter and increment that team's counter
         lastHitterAgent = agent;
-        prevHitterAgent = lastHitterAgent;
         lastHitterTeam = agent.teamId;
 
         if (agent.teamId == Team.Blue) touchesBlue++;
@@ -207,11 +205,6 @@ public class EnvironmentController : MonoBehaviour
                         blueAgent.AddReward(1f);
                         redAgent.AddReward(-1f);
 
-                        if (prevHitterAgent != null && prevHitterAgent.teamId == lastHitterAgent.teamId && prevHitterAgent != lastHitterAgent)
-                        {
-                            prevHitterAgent.AddReward(0.1f); // tune
-                        }
-
                         // >>> velocity-based bonus for Blue
                         if (ballRb != null)
                         {
@@ -235,8 +228,9 @@ public class EnvironmentController : MonoBehaviour
                     }
                     else
                     {
-                        // Fault: never crossed; point goes to opponent of last hitter
-                        AwardFaultAgainstLastHitter();
+                        blueAgent.AddReward(1f);
+                        redAgent.AddReward(-1f);
+                        ResetScene();
                     }
                     break;
                 }
@@ -248,11 +242,6 @@ public class EnvironmentController : MonoBehaviour
                     {
                         redAgent.AddReward(1f);
                         blueAgent.AddReward(-1f);
-
-                        if (prevHitterAgent != null && prevHitterAgent.teamId == lastHitterAgent.teamId && prevHitterAgent != lastHitterAgent)
-                        {
-                            prevHitterAgent.AddReward(0.1f); // tune
-                        }
 
                         // >>> velocity-based bonus for Red
                         if (ballRb != null)
@@ -278,8 +267,9 @@ public class EnvironmentController : MonoBehaviour
                     }
                     else
                     {
-                        // Fault: never crossed; point goes to opponent of last hitter
-                        AwardFaultAgainstLastHitter();
+                        redAgent.AddReward(1f);
+                        blueAgent.AddReward(-1f);
+                        ResetScene();
                     }
                     break;
                 }
@@ -438,12 +428,12 @@ public class EnvironmentController : MonoBehaviour
         if (ballSpawnSide == -1)
         {
             // Blue side spawn
-            ball.transform.localPosition = new Vector3(0f, 7f, -4f);
+            ball.transform.localPosition = new Vector3(0f, 10f, -4f);
         }
         else if (ballSpawnSide == 1)
         {
             // Red side spawn
-            ball.transform.localPosition = new Vector3(0f, 7f, 4f);
+            ball.transform.localPosition = new Vector3(0f, 10f, 4f);
         }
 
         // Reset ball physics
