@@ -199,7 +199,7 @@ public class EnvironmentController : MonoBehaviour
             }
         }
 
-        /* ---------- 2. reset the ball ------------------------------------------ */
+        /* ---------- 2. reset the ball ---------- */
         ResetBall();
 
         /* ---------- 3. log handy state summary --------------------------------- */
@@ -238,9 +238,9 @@ public class EnvironmentController : MonoBehaviour
         bool freezeOnServe = true;            // expose if you wish
         isBallFrozen = freezeOnServe;
 
-        ballRb.useGravity = !freezeOnServe;
-        ballRb.isKinematic = freezeOnServe;
-        if (ballCol != null) ballCol.isTrigger = freezeOnServe;
+        ballRb.useGravity = false;
+        ballRb.isKinematic = true;
+        if (ballCol != null) ballCol.isTrigger = true;
 
         Physics.SyncTransforms();
         D($"ResetBall  side={(ballSpawnSide == -1 ? "Blue" : "Red")}  server={nextServer}");
@@ -329,24 +329,31 @@ public class EnvironmentController : MonoBehaviour
     {
         switch (ev)
         {
-            case Event.HitRedGoal:    // ball touched RED floor
-                if (ballPassedOverNet) AwardRegularPoint(Team.Blue);
-                else AwardFaultAgainst(Team.Blue);  // hit own side
-                break;
+            case Event.HitRedGoal:
+                {
+                    if (lastHitterTeam == Team.Blue)        // legal attack
+                        AwardRegularPoint(Team.Blue);
+                    else                                     // self-goal
+                        AwardFaultAgainst(Team.Red);
+                    break;
+                }
 
-            case Event.HitBlueGoal:   // ball touched BLUE floor
-                if (ballPassedOverNet) AwardRegularPoint(Team.Red);
-                else AwardFaultAgainst(Team.Red);
-                break;
-
+            case Event.HitBlueGoal:
+                {
+                    if (lastHitterTeam == Team.Red)
+                        AwardRegularPoint(Team.Red);
+                    else
+                        AwardFaultAgainst(Team.Blue);
+                    break;
+                }
             case Event.HitOutOfBounds:        // went outside court limits
                 AwardFaultAgainst(lastHitter == Team.Default ? nextServer : lastHitter);
                 break;
 
-            case Event.PassOverNet:           // cleared the net – mark it
-                ballPassedOverNet = true;
-                D("PassOverNet – flag set true");
-                break;
+            //case Event.PassOverNet:           // cleared the net – mark it
+            //    ballPassedOverNet = true;
+            //    D("PassOverNet – flag set true");
+            //    break;
         }
     }
 

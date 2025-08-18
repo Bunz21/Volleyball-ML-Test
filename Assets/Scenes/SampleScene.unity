@@ -171,6 +171,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VolleyballFieldTwos (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -228,6 +232,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VolleyballFieldTwos (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -284,6 +292,10 @@ PrefabInstance:
     - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
       propertyPath: m_Name
       value: VolleyballFieldTwos (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -376,13 +388,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: 0.5, z: -0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 16, z: 0}
+  m_LocalRotation: {x: 0.20643929, y: 0.20697209, z: -0.044727363, w: 0.9552722}
+  m_LocalPosition: {x: -8.41003, y: 7.9109845, z: -19.941236}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 90, y: 90, z: 0}
+  m_LocalEulerAnglesHint: {x: 50, y: 70, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -479,6 +491,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VolleyballFieldTwos (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -535,6 +551,10 @@ PrefabInstance:
     - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
       propertyPath: m_Name
       value: VolleyballFieldTwos (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -714,6 +734,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VolleyballFieldTwos (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -820,6 +844,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VolleyballFieldTwos (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -876,6 +904,10 @@ PrefabInstance:
     - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
       propertyPath: m_Name
       value: VolleyballFieldTwos (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -934,6 +966,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VolleyballFieldTwos (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -991,6 +1027,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VolleyballFieldTwos (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1047,6 +1087,10 @@ PrefabInstance:
     - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
       propertyPath: m_Name
       value: VolleyballFieldTwos (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6413472765385161230, guid: 181206d0d7ddb2c4eac6e40072c9538d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

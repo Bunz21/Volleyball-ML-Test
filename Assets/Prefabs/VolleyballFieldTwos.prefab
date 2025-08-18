@@ -6003,7 +6003,7 @@ GameObject:
   - component: {fileID: 5080520552959027915}
   m_Layer: 0
   m_Name: RedArea
-  m_TagString: floorBlue
+  m_TagString: floorRed
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6330,7 +6330,7 @@ GameObject:
   - component: {fileID: 6176966125271190236}
   m_Layer: 0
   m_Name: RedArea (1)
-  m_TagString: floorBlue
+  m_TagString: floorRed
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7362,6 +7362,10 @@ PrefabInstance:
       propertyPath: blueFloor
       value: 
       objectReference: {fileID: 6356911934796212663}
+    - target: {fileID: 3883650878997386208, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
+      propertyPath: m_IsTrigger
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6125876905343170247, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
       propertyPath: m_Name
       value: Volleyball
