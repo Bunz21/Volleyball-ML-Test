@@ -205,67 +205,6 @@ public class VolleyballAgent : Agent
         }
     }
 
-    ///// <summary>
-    ///// Resolves the agent movement
-    ///// </summary>
-    //public void MoveAgent(ActionSegment<int> act)
-    //{
-    //    var grounded = CheckIfGrounded();
-    //    var dirToGo = Vector3.zero;
-    //    var rotateDir = Vector3.zero;
-    //    var dirToGoForwardAction = act[0];
-    //    var rotateDirAction = act[1];
-    //    var dirToGoSideAction = act[2];
-    //    var jumpAction = act[3];
-
-    //    if (dirToGoForwardAction == 1)
-    //        dirToGo = (grounded ? 1f : 0.5f) * transform.forward * 1f;
-    //    else if (dirToGoForwardAction == 2)
-    //        dirToGo = (grounded ? 1f : 0.5f) * transform.forward * volleyballSettings.speedReductionFactor * -1f;
-
-    //    if (rotateDirAction == 1)
-    //        rotateDir = transform.up * -1f;
-    //    else if (rotateDirAction == 2)
-    //        rotateDir = transform.up * 1f;
-
-    //    if (dirToGoSideAction == 1)
-    //        dirToGo = (grounded ? 1f : 0.5f) * transform.right * volleyballSettings.speedReductionFactor * -1f;
-    //    else if (dirToGoSideAction == 2)
-    //        dirToGo = (grounded ? 1f : 0.5f) * transform.right * volleyballSettings.speedReductionFactor;
-
-    //    if (jumpAction == 1)
-    //        if (((jumpingTime <= 0f) && grounded))
-    //        {
-    //            Jump();
-    //        }
-
-    //    transform.Rotate(rotateDir, Time.fixedDeltaTime * 200f);
-    //    agentRb.AddForce(dirToGo * volleyballSettings.agentRunSpeed,
-    //        ForceMode.VelocityChange);
-
-    //    if (jumpingTime > 0f)
-    //    {
-    //        jumpTargetPos =
-    //            new Vector3(agentRb.position.x,
-    //                jumpStartingPos.y + volleyballSettings.agentJumpHeight,
-    //                agentRb.position.z) + dirToGo;
-
-    //        MoveTowards(jumpTargetPos, agentRb, volleyballSettings.agentJumpVelocity,
-    //            volleyballSettings.agentJumpVelocityMaxChange);
-    //    }
-
-    //    if (!(jumpingTime > 0f) && !grounded)
-    //    {
-    //        agentRb.AddForce(
-    //            Vector3.down * volleyballSettings.fallingForce, ForceMode.Acceleration);
-    //    }
-
-    //    if (jumpingTime > 0f)
-    //    {
-    //        jumpingTime -= Time.fixedDeltaTime;
-    //    }
-    //}
-
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
         AddReward(-0.0005f);

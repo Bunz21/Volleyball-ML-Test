@@ -1171,7 +1171,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 1
+  m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -1771,7 +1771,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 1
+  m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -3541,7 +3541,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 1
+  m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -4839,11 +4839,14 @@ MonoBehaviour:
   ball: {fileID: 3305385571356851491}
   ballRb: {fileID: 3970031669195569061}
   ballCol: {fileID: 5564502837026052100}
-  blueGoal: {fileID: 6356911934796212663}
-  redGoal: {fileID: 204474434199989051}
+  blueGoal: {fileID: 1255844912213302848}
+  redGoal: {fileID: 7090448200735215638}
   blueAgent: {fileID: 8535513846028624241}
   redAgent: {fileID: 1010130669073776822}
   MaxEnvironmentSteps: 0
+  blueGoalMaterial: {fileID: 2100000, guid: 8340843852529124595a90fd0b2d0004, type: 2}
+  redGoalMaterial: {fileID: 2100000, guid: c80b5688e120df54e987d26e3aced0f2, type: 2}
+  defaultMaterial: {fileID: 2100000, guid: 6eecaeb456bdab9459ef9cffee268819, type: 2}
   AgentsList: []
   touchesBlue: 0
   touchesRed: 0
@@ -5546,7 +5549,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 1
+  m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1

@@ -23,14 +23,14 @@ public enum Event
 public class EnvironmentController : MonoBehaviour
 {
     /********************************************************
- *  CONFIGURATION  (serialized in the Inspector)
- ********************************************************/
+    *  CONFIGURATION  (serialized in the Inspector)
+    ********************************************************/
 
     //– Gameplay tuning -------------------------------------------------
     [SerializeField] private float velocityRewardForwardWeight = 0.02f;
     [SerializeField] private float velocityRewardDownWeight = 0.03f;
     [SerializeField] private float velocityRewardMax = 0.40f;
-    [SerializeField] private float touchCooldown = 0.10f;   // s
+    [SerializeField] private float touchCooldown = 0.20f;   // s
 
     //– Scene references ------------------------------------------------
     [SerializeField] private GameObject ball;
@@ -57,6 +57,11 @@ public class EnvironmentController : MonoBehaviour
     private Renderer redGoalRenderer;
     private VolleyballSettings volleyballSettings;
 
+    //- Materials ------------------------------------------------------
+    public Material blueGoalMaterial;
+    public Material redGoalMaterial;
+    public Material defaultMaterial;
+
     //– Collections -----------------------------------------------------
     public List<VolleyballAgent> AgentsList = new();   // all 4 agents
     private List<Renderer> RenderersList = new();  // both floor halves
@@ -68,7 +73,7 @@ public class EnvironmentController : MonoBehaviour
     public Team lastHitterTeam = Team.Default;
     public Team lastHitter = Team.Default;
     public VolleyballAgent lastHitterAgent = null;
-    private bool ballPassedOverNet = false;
+    //private bool ballPassedOverNet = false;
 
     //– Serve & reset logic --------------------------------------------
     private Team nextServer = Team.Default; // Default = “random first serve”
@@ -83,11 +88,14 @@ public class EnvironmentController : MonoBehaviour
     // Handy alias so calls read nicely (OpponentOf(team))
     private static Team OpponentOf(Team t) => (t == Team.Blue) ? Team.Red : Team.Blue;
 
+    // Coroutine for floor flash
+    private Coroutine floorFlashCo;
+
     // ------------------------------------------------------------
     // Simple one-line logger.  Toggle VERBOSE to silence everything
     // ------------------------------------------------------------
     #if UNITY_EDITOR
-    const bool VERBOSE = true;
+    const bool VERBOSE = false;
     #else
     const bool VERBOSE = false;
     #endif
@@ -97,9 +105,21 @@ public class EnvironmentController : MonoBehaviour
         if (VERBOSE) Debug.Log($"[EC] {Time.time:F2}s  {msg}");
     }
 
+    private void CacheAgents()
+    {
+        if (AgentsList.Count != 0) return;             // already populated
+
+        // true  -> include *inactive* children if you want them too
+        var localAgents = GetComponentsInChildren<VolleyballAgent>(true);
+
+        AgentsList.AddRange(localAgents);
+        D($"CacheAgents – found {localAgents.Length} local agents");
+    }
 
     void Awake()
     {
+        CacheAgents();
+
         if (ballRb == null && ball != null) ballRb = ball.GetComponent<Rigidbody>();
         if (ballCol == null && ball != null) ballCol = ball.GetComponent<Collider>();
         touchesBlue = 0;
@@ -150,7 +170,7 @@ public class EnvironmentController : MonoBehaviour
     {
         // slot: 0 = left (-2), 1 = right (+2)
         float x = (slot == 0) ? -2f : 2f;
-        float y = 1f;
+        float y = 0.5f;
         float z = (team == Team.Blue) ? -7f : 7f;
         return new Vector3(x, y, z);
     }
@@ -169,7 +189,7 @@ public class EnvironmentController : MonoBehaviour
     {
         D("== ResetScene ==");
         resetTimer = 0;
-        ballPassedOverNet = false;
+        //ballPassedOverNet = false;
 
         touchesBlue = 0;
         touchesRed = 0;
@@ -182,17 +202,21 @@ public class EnvironmentController : MonoBehaviour
         foreach (var ag in AgentsList)
         {
             Team team = ag.teamId;
-
             int slot = (team == Team.Blue) ? blueSlot++ : redSlot++;
-            if (slot > 1) slot = 1;                     // only two slots per side
+            slot = Mathf.Clamp(slot, 0, 1);            // only 0 or 1
 
-            ag.transform.SetPositionAndRotation(
-                GetSpawnPosition(team, slot),
-                GetSpawnRotation(team)
-            );
+            // 1) local offsets inside the court prefab
+            Vector3 localPos = GetSpawnPosition(team, slot);
+            Quaternion localRot = GetSpawnRotation(team);
 
-            var rb = ag.GetComponent<Rigidbody>();
-            if (rb != null)
+            // 2) convert to *scene* space using THIS prefab’s transform
+            Vector3 worldPos = transform.TransformPoint(localPos);
+            Quaternion worldRot = transform.rotation * localRot;
+
+            ag.transform.SetPositionAndRotation(worldPos, worldRot);
+
+            // clear rigidbody
+            if (ag.TryGetComponent(out Rigidbody rb))
             {
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
@@ -226,10 +250,14 @@ public class EnvironmentController : MonoBehaviour
             ballSpawnSide = (nextServer == Team.Blue) ? -1 : 1;
         }
 
-        float z = (ballSpawnSide == -1) ? -4f : 4f;   // -Z = Blue court
-        ball.transform.localPosition = new Vector3(0f, 2.5f, z);
+        float zLocal = (ballSpawnSide == -1) ? -4f : 4f;   // -Z blue, +Z red
+        Vector3 localBallPos = new Vector3(0f, 2.5f, zLocal);
 
-        /* 2) clear motion */
+        // --- convert to world space ------------------------------
+        ball.transform.position = transform.TransformPoint(localBallPos);
+        ball.transform.rotation = transform.rotation;          // face same way
+
+        /* 2) clear motion … (unchanged) */
         ballRb.isKinematic = false;
         ballRb.linearVelocity = Vector3.zero;
         ballRb.angularVelocity = Vector3.zero;
@@ -274,6 +302,7 @@ public class EnvironmentController : MonoBehaviour
         //FlashFloor(winner);
 
         // 3) next rally serves from the winning side
+        FlashFloor(winner);
         nextServer = winner;
 
         // 4) finish episodes so stats roll up
@@ -461,4 +490,45 @@ public class EnvironmentController : MonoBehaviour
         D($"UpdateLastHitter -> {lastHitter}");
     }
 
+    /// <summary>
+    /// Temporarily tints both ground halves with the winner’s colour.
+    /// </summary>
+    /// <param name="scoringTeam">Team.Blue or Team.Red</param>
+    /// <param name="seconds">How long the flash should last</param>
+    private void FlashFloor(Team scoringTeam, float seconds = 0.5f)
+    {
+        D($"FlashFloor called – team {scoringTeam}");
+        if (RenderersList.Count == 0)
+        {
+            D("FlashFloor – no renderers registered! Did you forget to add them?");
+            return;
+        }
+
+        // choose the material that matches the team that just scored
+        Material mat = (scoringTeam == Team.Blue)
+            ? volleyballSettings.blueGoalMaterial     // customise in your VolleyballSettings asset
+            : volleyballSettings.redGoalMaterial;
+
+        // stop an earlier flash so colours don’t overlap
+        if (floorFlashCo != null)
+            StopCoroutine(floorFlashCo);
+
+        floorFlashCo = StartCoroutine(FloorFlashRoutine(mat, seconds));
+    }
+
+    private IEnumerator FloorFlashRoutine(Material flashMat, float duration)
+    {
+        // 1) apply tint
+        foreach (Renderer r in RenderersList)
+            r.material = flashMat;
+
+        // 2) hold
+        yield return new WaitForSeconds(duration);
+
+        // 3) restore default
+        foreach (Renderer r in RenderersList)
+            r.material = volleyballSettings.defaultMaterial;
+
+        floorFlashCo = null;      // allow a fresh flash next rally
+    }
 }
