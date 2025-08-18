@@ -28,6 +28,7 @@ public class VolleyballController : MonoBehaviour
         VolleyballAgent agent = other.GetComponent<VolleyballAgent>();
         if (agent != null)
         {
+            envController.D("COLLIDE " + agent.teamId + " AGENT");
             envController.RegisterTouch(agent);   // will un-freeze the ball
             return;                               // nothing else to do
         }
@@ -39,18 +40,22 @@ public class VolleyballController : MonoBehaviour
             other.CompareTag("ofbdetector"))
         {
             envController.ResolveEvent(Event.HitOutOfBounds);
+            envController.D("OUTOFBOUNDS");
         }
         else if (other.CompareTag("floorRed"))
         {
             envController.ResolveEvent(Event.HitRedGoal);
+            envController.D("COLLIDE RED GOAL");
         }
         else if (other.CompareTag("floorBlue"))
         {
             envController.ResolveEvent(Event.HitBlueGoal);
+            envController.D("COLLIDE BLUE GOAL");
         }
         else if (other.CompareTag("overnetdetector"))
         {
             envController.ResolveEvent(Event.PassOverNet);
+            envController.D("COLLIDE OVER NET");
         }
     }
 }

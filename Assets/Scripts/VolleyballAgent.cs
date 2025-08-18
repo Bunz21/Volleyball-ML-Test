@@ -17,7 +17,7 @@ public class VolleyballAgent : Agent
     public GameObject ball;
     Rigidbody ballRb;
     [SerializeField] private VolleyballSettings volleyballSettings; // allow Inspector hookup
-    EnvironmentController envController;
+    [HideInInspector] public EnvironmentController envController;   // <-- already there? keep it.
 
     // Controls jump behavior
     float jumpingTime;
@@ -33,15 +33,17 @@ public class VolleyballAgent : Agent
         envController = area.GetComponent<EnvironmentController>();
     }
 
-    protected new void Awake()
+    new void Awake()
     {
-        if (teammate == null)
-        {
-            // naive: find agents with same team and not self
-            var all = FindFirstObjectByType<VolleyballAgent>();
-            foreach (var a in envController.AgentsList)
-                if (a != this && a.teamId == teamId) { teammate = a; break; }
-        }
+        // If you forgot to drag the reference in the Inspector, grab the first one up the hierarchy.
+        if (envController == null)
+            envController = GetComponentInParent<EnvironmentController>();
+
+        // Optional: fallback warning
+        if (envController == null)
+            Debug.LogError($"[{name}] could not find EnvironmentController in parents!");
+
+        base.Awake();
     }
 
 
@@ -124,19 +126,6 @@ public class VolleyballAgent : Agent
         {
             envController.RegisterTouch(this);  // <- NEW
         }
-        //if (teamId == Team.Blue)
-        //{
-        //    if (c.collider.CompareTag("floorRed"))
-        //    {
-        //        AddReward(-0.005f);
-        //    }
-        //} else if (teamId == Team.Red)
-        //{
-        //    if (c.collider.CompareTag("floorBlue"))
-        //    {
-        //        AddReward(-0.005f);
-        //    }
-        //}
     }
 
 
