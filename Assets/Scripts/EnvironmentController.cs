@@ -209,36 +209,41 @@ public class EnvironmentController : MonoBehaviour
     // -----------------------------------------------------------------------------
     //  ResetBall – decides side, teleports, clears motion, re-freezes if wanted
     // -----------------------------------------------------------------------------
+    /********************************************************
+    *  ResetBall – decide court, teleport, freeze if needed
+    ********************************************************/
     private void ResetBall()
     {
-        /* 1) alternate spawn side so rallies always switch */
-        ballSpawnSide *= -1;                 // first call will set to ±1 correctly
-        float z = (ballSpawnSide == -1) ? -4f : 4f;   // blue court is -Z
+        /* 1) Decide which court serves */
+        if (nextServer == Team.Default)
+        {
+            // first rally – random
+            ballSpawnSide = (Random.Range(0, 2) == 0) ? -1 : 1;
+            nextServer = (ballSpawnSide == -1) ? Team.Blue : Team.Red;
+        }
+        else
+        {
+            ballSpawnSide = (nextServer == Team.Blue) ? -1 : 1;
+        }
 
+        float z = (ballSpawnSide == -1) ? -4f : 4f;   // -Z = Blue court
         ball.transform.localPosition = new Vector3(0f, 2.5f, z);
 
-        /* 2) clear physics state (has to be non-kinematic while we do it) */
-        if (ballRb == null) ballRb = ball.GetComponent<Rigidbody>();
-
+        /* 2) clear motion */
         ballRb.isKinematic = false;
         ballRb.linearVelocity = Vector3.zero;
         ballRb.angularVelocity = Vector3.zero;
 
-        /* 3) optionally drop it frozen in mid-air – hook your own flag here */
-        bool freezeOnServe = true;           // <-- expose as [SerializeField] later
-        if (freezeOnServe)
-        {
-            ballRb.useGravity = false;
-            ballRb.isKinematic = true;       // keep suspended until first touch
-        }
-        else
-        {
-            ballRb.useGravity = true;
-        }
+        /* 3) freeze or drop live */
+        bool freezeOnServe = true;            // expose if you wish
+        isBallFrozen = freezeOnServe;
+
+        ballRb.useGravity = !freezeOnServe;
+        ballRb.isKinematic = freezeOnServe;
+        if (ballCol != null) ballCol.isTrigger = freezeOnServe;
 
         Physics.SyncTransforms();
-
-        D($"ResetBall  side={(ballSpawnSide == -1 ? "Blue" : "Red")}  freeze={freezeOnServe}");
+        D($"ResetBall  side={(ballSpawnSide == -1 ? "Blue" : "Red")}  server={nextServer}");
     }
 
     // ============================================================================

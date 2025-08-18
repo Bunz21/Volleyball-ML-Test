@@ -1194,11 +1194,12 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
-  area: {fileID: 6356911934796212663}
+  area: {fileID: 6413472765385161230}
   teammate: {fileID: 2783493210394317129}
   teamId: 0
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
+  envController: {fileID: 0}
   hitGroundColliders:
   - {fileID: 0}
   - {fileID: 0}
@@ -1793,11 +1794,12 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
-  area: {fileID: 6356911934796212663}
+  area: {fileID: 6413472765385161230}
   teammate: {fileID: 8535513846028624241}
   teamId: 0
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
+  envController: {fileID: 0}
   hitGroundColliders:
   - {fileID: 0}
   - {fileID: 0}
@@ -3562,11 +3564,12 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
-  area: {fileID: 204474434199989051}
+  area: {fileID: 6413472765385161230}
   teammate: {fileID: 1010130669073776822}
   teamId: 1
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
+  envController: {fileID: 0}
   hitGroundColliders:
   - {fileID: 0}
   - {fileID: 0}
@@ -5566,11 +5569,12 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
-  area: {fileID: 204474434199989051}
+  area: {fileID: 6413472765385161230}
   teammate: {fileID: 2756245957533092973}
   teamId: 1
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
+  envController: {fileID: 0}
   hitGroundColliders:
   - {fileID: 0}
   - {fileID: 0}
