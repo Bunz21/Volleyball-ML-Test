@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.MLAgents;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 
 public enum Team
@@ -22,6 +21,21 @@ public enum Event
 
 public class EnvironmentController : MonoBehaviour
 {
+    // ------------------------------------------------------------
+    // Simple one-line logger.  Toggle VERBOSE to silence everything
+    // ------------------------------------------------------------
+    #if UNITY_EDITOR
+    const bool VERBOSE = true;
+    #else
+    const bool VERBOSE = false;
+    #endif
+
+    void D(string msg)
+    {
+        if (VERBOSE) Debug.Log($"[EC] {Time.time:F2}s  {msg}");
+    }
+
+
     int ballSpawnSide;
 
     // Add near top of EnvironmentController
@@ -29,7 +43,16 @@ public class EnvironmentController : MonoBehaviour
     [SerializeField] float velocityRewardDownWeight = 0.03f;  // per m/s downward
     [SerializeField] float velocityRewardMax = 0.4f;   // cap
 
+    // 1.  add a field for quick access
+    [SerializeField] private Collider ballCol;
+
     VolleyballSettings volleyballSettings;
+
+    // Serve-freeze config
+    [SerializeField] bool freezeOnServe = true;
+    //[SerializeField] float serveTouchUpImpulse = 2.0f;     // small pop so it doesn't die at feet
+    //[SerializeField] float serveTouchFwdImpulse = 1.5f;    // gentle nudge in the hitter's forward
+    bool isBallFrozen = false;
 
     public VolleyballAgent blueAgent;
     public VolleyballAgent redAgent;
@@ -47,6 +70,8 @@ public class EnvironmentController : MonoBehaviour
 
     public GameObject blueGoal;
     public GameObject redGoal;
+
+    private Team nextServer = Team.Default;   // Default = “pick randomly once”
 
     Renderer blueGoalRenderer;
 
@@ -66,23 +91,52 @@ public class EnvironmentController : MonoBehaviour
     // To prevent multi-count from the same physics frame / quick recontacts
     [SerializeField] float touchCooldown = 0.10f;        // seconds
     private Dictionary<VolleyballAgent, float> lastTouchTime = new Dictionary<VolleyballAgent, float>();
+
+    // ------------------------------------------------------------------
+    //  put this in EnvironmentController
+    // ------------------------------------------------------------------
+    private Coroutine floorFlashCo;         // keep a handle to the running job
+
+    void FlashFloor(Team scoringTeam, float seconds = 0.5f)
+    {
+        // pick the material that matches the team that *won the point*
+        Material mat = (scoringTeam == Team.Blue)
+                       ? volleyballSettings.blueGoalMaterial
+                       : volleyballSettings.redGoalMaterial;
+
+        // stop any previous flash so colours never clash
+        if (floorFlashCo != null) StopCoroutine(floorFlashCo);
+        floorFlashCo = StartCoroutine(FloorFlashRoutine(mat, seconds));
+        D("FlashFloor color " + scoringTeam);
+    }
+
+    IEnumerator FloorFlashRoutine(Material mat, float time)
+    {
+        D("Flashing color " + mat);
+        foreach (var r in RenderersList)
+            r.material = mat;
+
+        yield return new WaitForSeconds(time);
+
+        foreach (var r in RenderersList)
+            r.material = volleyballSettings.defaultMaterial;
+
+        floorFlashCo = null;              // allow new flashes again
+    }
+
     void Awake()
     {
         if (ballRb == null && ball != null) ballRb = ball.GetComponent<Rigidbody>();
+        if (ballCol == null && ball != null) ballCol = ball.GetComponent<Collider>();
+        D("Awake – grabbed ballRb/ballCol");
     }
 
     void Start()
     {
-
+        D("Start – scene initialised, calling ResetScene");
         // Used to control agent & ball starting positions
         blueAgentRb = blueAgent.GetComponent<Rigidbody>();
         redAgentRb = redAgent.GetComponent<Rigidbody>();
-        ballRb = ball.GetComponent<Rigidbody>();
-
-        // Starting ball spawn side
-        // -1 = spawn blue side, 1 = spawn red side
-        var spawnSideList = new List<int> { -1, 1 };
-        ballSpawnSide = spawnSideList[Random.Range(0, 2)];
 
         // Render ground to visualise which agent scored
         blueGoalRenderer = blueGoal.GetComponent<Renderer>();
@@ -98,88 +152,108 @@ public class EnvironmentController : MonoBehaviour
     /// <summary>
     /// Tracks which agent last had control of the ball
     /// </summary>
-    public void UpdateLastHitter(Team team)
+    void UpdateLastHitter(VolleyballAgent agent)
     {
-        lastHitter = team;
+        lastHitterAgent = agent;
+        lastHitterTeam = agent.teamId;
+        lastHitter = agent.teamId;
+        D($"UpdateLastHitter -> {lastHitter}");
     }
 
-    public void AwardFaultAgainstLastHitter()
+    // ---------------------------------------------------------------------------
+    // Call this ONE line whenever the rally is over:
+    //     EndRally(Team.Blue);   // Blue scored
+    //     EndRally(Team.Red);    // Red scored
+    // ---------------------------------------------------------------------------
+    void EndRally(Team winner, float bonus = 0f)
     {
-        if (lastHitter == Team.Blue)
+        Team loser = (winner == Team.Blue) ? Team.Red : Team.Blue;
+        D($"EndRally – {winner} wins (bonus {bonus:0.00}), nextServer = {winner}");
+
+        // 1. primary rewards (add any shaping bonus you computed earlier)
+        if (winner == Team.Blue)
         {
-            blueAgent.AddReward(-1f);
-            redAgent.AddReward(1f);
-        }
-        else if (lastHitter == Team.Red)
-        {
+            blueAgent.AddReward(1f + bonus);
             redAgent.AddReward(-1f);
-            blueAgent.AddReward(1f);
         }
         else
         {
-            // No known last hitter; treat as neutral or choose a policy. Here we do no-op.
+            redAgent.AddReward(1f + bonus);
+            blueAgent.AddReward(-1f);
         }
 
-        // End rally
+        // 2. visual feedback
+        FlashFloor(winner);
+
+        // 3. the team that won will serve next
+        nextServer = winner;
+
+        // 4. finish the episodes so stats roll up
         blueAgent.EndEpisode();
         redAgent.EndEpisode();
 
-        // Clear rally state
-        ballPassedOverNet = false;
+        // 5. clear rally-state and drop a new ball on the server’s side
         ResetScene();
     }
+
+    public void ActivateBallFromServe(VolleyballAgent toucher)
+    {
+        if (!isBallFrozen) return;
+
+        isBallFrozen = false;
+        ballCol.isTrigger = false;   // solid again – must come *before* physics step
+        ballRb.isKinematic = false;
+        ballRb.useGravity = true;
+        ballRb.linearVelocity = Vector3.zero;
+        ballRb.angularVelocity = Vector3.zero;
+
+        if (toucher != null)
+            toucher.AddReward(0.05f);
+
+        // make sure PhysX sees the change immediately
+        Physics.SyncTransforms();
+    }
+
 
     public void RegisterTouch(VolleyballAgent agent)
     {
         if (agent == null) return;
-        ballPassedOverNet = false;
-
-        // Cooldown: ignore rapid repeated contacts from same agent
+        
+        /* 0. cool-down --------------------------------------------------------- */
         float now = Time.time;
-        if (lastTouchTime.TryGetValue(agent, out float tLast) && (now - tLast) < touchCooldown)
+        if (lastTouchTime.TryGetValue(agent, out float tLast) &&
+            (now - tLast) < touchCooldown)
             return;
-        lastTouchTime[agent] = now;
+        lastTouchTime[agent] = Time.frameCount;
+        
+        /* 1. first touch after serve?  ---------------------------------------- */
+        ActivateBallFromServe(agent);   // harmless if already active
 
-        // Double-touch check: same agent touching twice in a row
+        /* 2. double-touch fault ----------------------------------------------- */
         if (lastHitterAgent == agent)
         {
-            // Double-touch fault: award point to the OTHER team
-            if (agent.teamId == Team.Blue)
-            {
-                blueAgent.AddReward(-1f);
-                redAgent.AddReward(1f);
-            }
-            else if (agent.teamId == Team.Red)
-            {
-                blueAgent.AddReward(1f);
-                redAgent.AddReward(-1f);
-            }
-            ResetScene();
+            D("Double-touch fault");
+            EndRally(OpponentOf(lastHitter));   // double-touch or 4-touch fault
             return;
         }
 
-        // New legal touch: update last hitter and increment that team's counter
-        lastHitterAgent = agent;
-        lastHitterTeam = agent.teamId;
+        /* 3. bookkeeping for a legal touch ------------------------------------ */
+        UpdateLastHitter(agent);
 
         if (agent.teamId == Team.Blue) touchesBlue++;
         else touchesRed++;
 
-        // Exceeded 3 touches on a side -> fault to opponent
-        if (touchesBlue > 3)
+        /* 4. four-touch fault -------------------------------------------------- */
+        if (touchesBlue > 3 || touchesRed > 3)
         {
-            blueAgent.AddReward(-1f);
-            redAgent.AddReward(1f);
+            D("Four-touch fault");
+            EndRally(OpponentOf(lastHitter));   // double-touch or 4-touch fault
             return;
         }
-        if (touchesRed > 3)
-        {
-            blueAgent.AddReward(1f);
-            redAgent.AddReward(-1f);
-            return;
-        }
-    }
+        D($"RegisterTouch by {agent.teamId} | lastHitter={lastHitter}  TB/TR={touchesBlue}/{touchesRed}");
 
+        /* 5. rally continues — *do not* touch ballPassedOverNet here ---------- */
+    }
 
     /// <summary>
     /// Resolves scenarios when ball enters a trigger and assigns rewards.
@@ -191,96 +265,36 @@ public class EnvironmentController : MonoBehaviour
         switch (triggerEvent)
         {
             case Event.HitOutOfBounds:
-                {
-                    // Last team to hit loses the point (full point)
-                    AwardFaultAgainstLastHitter();
-                    break;
-                }
+                D($"OutOfBounds   lastHitter={lastHitter}");
+                EndRally(OpponentOf(lastHitter == Team.Default ? nextServer : lastHitter));
+                break;
 
-            case Event.HitRedGoal:
+            case Event.HitRedGoal:   // ball landed on the RED floor
+                D($"HitRedGoal | crossed={ballPassedOverNet}  lastHitter={lastHitter}");
                 {
-                    // Ball hit Red floor. Only award Blue if the ball crossed the net this rally.
                     if (ballPassedOverNet)
-                    {
-                        blueAgent.AddReward(1f);
-                        redAgent.AddReward(-1f);
-
-                        // >>> velocity-based bonus for Blue
-                        if (ballRb != null)
-                        {
-                            Vector3 v = ballRb.linearVelocity;
-                            float forward = Mathf.Max(0f, Vector3.Dot(v, Vector3.forward)); // +Z toward Red
-                            float down = Mathf.Max(0f, -v.y);                             // only downward
-                            float bonus = velocityRewardForwardWeight * forward
-                                          + velocityRewardDownWeight * down;
-                            bonus = Mathf.Min(bonus, velocityRewardMax);
-                            if (bonus > 0f) blueAgent.AddReward(bonus);
-                        }
-
-                        // Visual feedback (Blue scored)
-                        StartCoroutine(GoalScoredSwapGroundMaterial(volleyballSettings.blueGoalMaterial, RenderersList, 0.5f));
-
-                        blueAgent.EndEpisode();
-                        redAgent.EndEpisode();
-
-                        ballPassedOverNet = false;
-                        ResetScene();
-                    }
+                        EndRally(Team.Blue);          // Blue scored cleanly
                     else
-                    {
-                        blueAgent.AddReward(1f);
-                        redAgent.AddReward(-1f);
-                        ResetScene();
-                    }
+                        EndRally(OpponentOf(lastHitter == Team.Default ? nextServer : lastHitter));
                     break;
                 }
 
-            case Event.HitBlueGoal:
+            case Event.HitBlueGoal:  // ball landed on the BLUE floor
+                D($"HitBlueGoal | crossed={ballPassedOverNet}  lastHitter={lastHitter}");
                 {
-                    // Ball hit Blue floor. Only award Red if the ball crossed the net this rally.
                     if (ballPassedOverNet)
-                    {
-                        redAgent.AddReward(1f);
-                        blueAgent.AddReward(-1f);
-
-                        // >>> velocity-based bonus for Red
-                        if (ballRb != null)
-                        {
-                            Vector3 v = ballRb.linearVelocity;
-                            float forward = Mathf.Max(0f, Vector3.Dot(v, Vector3.back)); // -Z toward Blue
-                            float down = Mathf.Max(0f, -v.y);
-                            float bonus = velocityRewardForwardWeight * forward
-                                          + velocityRewardDownWeight * down;
-                            bonus = Mathf.Min(bonus, velocityRewardMax);
-                            if (bonus > 0f) redAgent.AddReward(bonus);
-                        }
-
-
-                        // Visual feedback (Red scored)
-                        StartCoroutine(GoalScoredSwapGroundMaterial(volleyballSettings.redGoalMaterial, RenderersList, 0.5f));
-
-                        blueAgent.EndEpisode();
-                        redAgent.EndEpisode();
-
-                        ballPassedOverNet = false;
-                        ResetScene();
-                    }
+                        EndRally(Team.Red);           // Red scored cleanly
                     else
-                    {
-                        redAgent.AddReward(1f);
-                        blueAgent.AddReward(-1f);
-                        ResetScene();
-                    }
+                        EndRally(OpponentOf(lastHitter == Team.Default ? nextServer : lastHitter));
                     break;
                 }
+
 
             case Event.PassOverNet:
+                D("PassOverNet – flag set TRUE");
                 {
                     // Mark that a legal crossing occurred; optional small shaping reward to last hitter
                     ballPassedOverNet = true;
-                    touchesBlue = 0;
-                    touchesRed = 0;
-                    lastHitterAgent = null;
 
                     if (lastHitter == Team.Red)
                     {
@@ -314,37 +328,12 @@ public class EnvironmentController : MonoBehaviour
                                 break;
                         }
                     }
-                    break;
-                }
-
-            case Event.AgentTouch:
-                {
-                    ballPassedOverNet = false;
+                    touchesBlue = 0;
+                    touchesRed = 0;
+                    lastHitterAgent = null;
                     break;
                 }
         }
-    }
-
-    /// <summary>
-    /// Changes the color of the ground for a moment.
-    /// </summary>
-    /// <returns>The Enumerator to be used in a Coroutine.</returns>
-    /// <param name="mat">The material to be swapped.</param>
-    /// <param name="time">The time the material will remain.</param>
-    IEnumerator GoalScoredSwapGroundMaterial(Material mat, List<Renderer> rendererList, float time)
-    {
-        foreach (var renderer in rendererList)
-        {
-            renderer.material = mat;
-        }
-
-        yield return new WaitForSeconds(time); // wait for 2 sec
-
-        foreach (var renderer in rendererList)
-        {
-            renderer.material = volleyballSettings.defaultMaterial;
-        }
-
     }
 
     /// <summary>
@@ -379,13 +368,14 @@ public class EnvironmentController : MonoBehaviour
 
     public void ResetScene()
     {
+        D("ResetScene – spawning agents & resetting rally state");
         resetTimer = 0;
         lastHitter = Team.Default;
         ballPassedOverNet = false;
         touchesBlue = 0;
         touchesRed = 0;
         lastHitterAgent = null;
-        lastHitter = Team.Default;
+        lastHitterTeam = Team.Default;
         lastTouchTime.Clear();
 
         // deterministic slots per team
@@ -421,23 +411,51 @@ public class EnvironmentController : MonoBehaviour
     /// </summary>
     void ResetBall()
     {
-        // alternate ball spawn side
-        // -1 = spawn blue side, 1 = spawn red side
-        ballSpawnSide = -1 * ballSpawnSide;
-
-        if (ballSpawnSide == -1)
+        /* ------------------------------------------------
+         * 1)  Decide which side serves this rally
+         * ------------------------------------------------ */
+        if (nextServer == Team.Default)
         {
-            // Blue side spawn
-            ball.transform.localPosition = new Vector3(0f, 10f, -4f);
+            // first ever serve – pick a random side
+            ballSpawnSide = (Random.Range(0, 2) == 0) ? -1 : 1;
+            nextServer = (ballSpawnSide == -1) ? Team.Blue : Team.Red;
         }
-        else if (ballSpawnSide == 1)
+        else
         {
-            // Red side spawn
-            ball.transform.localPosition = new Vector3(0f, 10f, 4f);
+            // normal case – use the team that just scored
+            ballSpawnSide = (nextServer == Team.Blue) ? 1 : -1;
         }
 
-        // Reset ball physics
+        float z = (ballSpawnSide == -1) ? -4f : 4f;   // Blue court is -Z
+        ball.transform.localPosition = new Vector3(0f, 2.5f, z);
+
+        /* ------------------------------------------------
+         * 2)  Clear motion (must be non-kinematic)
+         * ------------------------------------------------ */
+        ballRb.isKinematic = false;
+        ballRb.linearVelocity = Vector3.zero;       // <- correct property name
         ballRb.angularVelocity = Vector3.zero;
-        ballRb.linearVelocity = Vector3.zero;
+
+        /* ------------------------------------------------
+         * 3)  Freeze or release depending on freezeOnServe
+         * ------------------------------------------------ */
+        D($"ResetBall – server={nextServer}  spawnZ={(ballSpawnSide == -1 ? "-7(Blue)" : "+7(Red)")}");
+
+        if (freezeOnServe)
+        {
+            isBallFrozen = true;
+            ballRb.useGravity = false;
+            ballRb.isKinematic = true;
+            ballCol.isTrigger = true;   // no solid contact during freeze
+        }
+        else
+        {
+            isBallFrozen = false;
+            ballRb.useGravity = true;
+            ballRb.isKinematic = false;
+            ballCol.isTrigger = false;
+        }
+
+        Physics.SyncTransforms();
     }
 }

@@ -2126,7 +2126,7 @@ MonoBehaviour:
   agentJumpVelocityMaxChange: 10
   speedReductionFactor: 0.75
   blueGoalMaterial: {fileID: 2100000, guid: c80b5688e120df54e987d26e3aced0f2, type: 2}
-  redGoalMaterial: {fileID: 2100000, guid: 43bf5edb77dbc5740a1097afcc825e5f, type: 2}
+  redGoalMaterial: {fileID: 2100000, guid: 8340843852529124595a90fd0b2d0004, type: 2}
   defaultMaterial: {fileID: 2100000, guid: 6eecaeb456bdab9459ef9cffee268819, type: 2}
   fallingForce: 150
 --- !u!1 &3010325449887194343
@@ -2537,7 +2537,7 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -2756,7 +2756,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 11
+    VectorObservationSize: 19
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -2765,9 +2765,9 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: fb7999ed4c7d2b24386c638f6b629e44, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -2791,7 +2791,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
-  teammate: {fileID: 0}
+  teammate: {fileID: 6707164188892857331}
   teamId: 1
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
@@ -3070,7 +3070,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 11
+    VectorObservationSize: 19
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -3079,9 +3079,9 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: fb7999ed4c7d2b24386c638f6b629e44, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -3105,7 +3105,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
-  teammate: {fileID: 0}
+  teammate: {fileID: 320766577293950766}
   teamId: 1
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
@@ -3583,7 +3583,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 11
+    VectorObservationSize: 19
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -3592,9 +3592,9 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: fb7999ed4c7d2b24386c638f6b629e44, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -3618,7 +3618,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
-  teammate: {fileID: 0}
+  teammate: {fileID: 5121383063362370766}
   teamId: 0
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
@@ -4349,7 +4349,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 11
+    VectorObservationSize: 19
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -4358,9 +4358,9 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: fb7999ed4c7d2b24386c638f6b629e44, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -4384,7 +4384,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
-  teammate: {fileID: 0}
+  teammate: {fileID: 5647540142417143707}
   teamId: 0
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
@@ -5179,6 +5179,8 @@ MonoBehaviour:
   velocityRewardForwardWeight: 0.02
   velocityRewardDownWeight: 0.03
   velocityRewardMax: 0.4
+  ballCol: {fileID: 5564502837026052100}
+  freezeOnServe: 1
   blueAgent: {fileID: 5647540142417143707}
   redAgent: {fileID: 6707164188892857331}
   AgentsList: []

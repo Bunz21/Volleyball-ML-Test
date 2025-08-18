@@ -22,30 +22,35 @@ public class VolleyballController : MonoBehaviour
     /// </summary>
     void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("outofbounds") || other.gameObject.CompareTag("antenna") || other.gameObject.CompareTag("ofbdetector"))
+        //----------------------------------------------------------
+        // NEW: first legal touch while the ball is still a trigger
+        //----------------------------------------------------------
+        VolleyballAgent agent = other.GetComponent<VolleyballAgent>();
+        if (agent != null)
         {
-            // ball went out of bounds
+            envController.RegisterTouch(agent);   // will un-freeze the ball
+            return;                               // nothing else to do
+        }
+
+        //----------------------------------------------------------
+        // existing floor / antenna / over-net logic
+        //----------------------------------------------------------
+        if (other.CompareTag("outofbounds") || other.CompareTag("antenna") ||
+            other.CompareTag("ofbdetector"))
+        {
             envController.ResolveEvent(Event.HitOutOfBounds);
         }
-        else if (other.gameObject.CompareTag("floorRed"))
+        else if (other.CompareTag("floorRed"))
         {
-            // ball hit into red side
             envController.ResolveEvent(Event.HitRedGoal);
         }
-        else if (other.gameObject.CompareTag("floorBlue"))
+        else if (other.CompareTag("floorBlue"))
         {
-            // ball hit into blue side
             envController.ResolveEvent(Event.HitBlueGoal);
         }
-        else if (other.gameObject.CompareTag("overnetdetector"))
+        else if (other.CompareTag("overnetdetector"))
         {
-            // ball hit over net
             envController.ResolveEvent(Event.PassOverNet);
-        }
-        else if (other.gameObject.CompareTag("blueAgent") || other.gameObject.CompareTag("redAgent"))
-        {
-            // ball hit over net
-            envController.ResolveEvent(Event.AgentTouch);
         }
     }
 }

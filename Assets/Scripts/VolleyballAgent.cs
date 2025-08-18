@@ -301,7 +301,6 @@ public class VolleyballAgent : Agent
         float maxDist = 20f;  // based on roof height
         sensor.AddObservation(Mathf.Clamp01(toBall.magnitude / maxDist));
 
-
         // Agent velocity (use Rigidbody.velocity, not linearVelocity)
         sensor.AddObservation(agentRb.linearVelocity / 10f);     // 3 floats
 
