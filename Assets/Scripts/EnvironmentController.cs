@@ -281,7 +281,7 @@ public class EnvironmentController : MonoBehaviour
     /*------------------------------------------------------------
      * EndRally  – finalises a rally and starts the next one.
      *   winner : Team.Blue  or  Team.Red
-     *   bonus  : extra shaping reward (0 by default)
+     *   bonus  : extra shaping reward (0 by default)test
      *-----------------------------------------------------------*/
     private void EndRally(Team winner, float bonus = 0f)
     {
