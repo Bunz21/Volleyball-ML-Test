@@ -2,22 +2,58 @@
     "VolleyballAgent": {
         "checkpoints": [
             {
-                "steps": 0,
-                "file_path": "results\\vball1\\VolleyballAgent\\VolleyballAgent-0.onnx",
-                "reward": null,
-                "creation_time": 1755513848.8464491,
+                "steps": 999668,
+                "file_path": "results\\vball1\\VolleyballAgent\\VolleyballAgent-999668.onnx",
+                "reward": -2.060352870646645,
+                "creation_time": 1755569442.2236903,
                 "auxillary_file_paths": [
-                    "results\\vball1\\VolleyballAgent\\VolleyballAgent-0.pt"
+                    "results\\vball1\\VolleyballAgent\\VolleyballAgent-999668.pt"
+                ]
+            },
+            {
+                "steps": 1499668,
+                "file_path": "results\\vball1\\VolleyballAgent\\VolleyballAgent-1499668.onnx",
+                "reward": -2.042499969402949,
+                "creation_time": 1755569843.2047198,
+                "auxillary_file_paths": [
+                    "results\\vball1\\VolleyballAgent\\VolleyballAgent-1499668.pt"
+                ]
+            },
+            {
+                "steps": 1999564,
+                "file_path": "results\\vball1\\VolleyballAgent\\VolleyballAgent-1999564.onnx",
+                "reward": -2.1364888372244657,
+                "creation_time": 1755570209.1984544,
+                "auxillary_file_paths": [
+                    "results\\vball1\\VolleyballAgent\\VolleyballAgent-1999564.pt"
+                ]
+            },
+            {
+                "steps": 2499094,
+                "file_path": "results\\vball1\\VolleyballAgent\\VolleyballAgent-2499094.onnx",
+                "reward": null,
+                "creation_time": 1755570597.1054108,
+                "auxillary_file_paths": [
+                    "results\\vball1\\VolleyballAgent\\VolleyballAgent-2499094.pt"
+                ]
+            },
+            {
+                "steps": 2931094,
+                "file_path": "results\\vball1\\VolleyballAgent\\VolleyballAgent-2931094.onnx",
+                "reward": null,
+                "creation_time": 1755570927.6984417,
+                "auxillary_file_paths": [
+                    "results\\vball1\\VolleyballAgent\\VolleyballAgent-2931094.pt"
                 ]
             }
         ],
         "final_checkpoint": {
-            "steps": 0,
+            "steps": 2931094,
             "file_path": "results\\vball1\\VolleyballAgent.onnx",
             "reward": null,
-            "creation_time": 1755513848.8464491,
+            "creation_time": 1755570927.6984417,
             "auxillary_file_paths": [
-                "results\\vball1\\VolleyballAgent\\VolleyballAgent-0.pt"
+                "results\\vball1\\VolleyballAgent\\VolleyballAgent-2931094.pt"
             ]
         }
     },

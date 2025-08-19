@@ -31,6 +31,8 @@ public class EnvironmentController : MonoBehaviour
     [SerializeField] private float velocityRewardDownWeight = 0.03f;
     [SerializeField] private float velocityRewardMax = 0.40f;
     [SerializeField] private float touchCooldown = 0.20f;   // s
+    [SerializeField] private float assistRewardSetter = 0.03f;  // earlier touch
+    [SerializeField] private float assistRewardSpiker = 0.04f;  // current touch
 
     //– Scene references ------------------------------------------------
     [SerializeField] private GameObject ball;
@@ -318,6 +320,20 @@ public class EnvironmentController : MonoBehaviour
     private void AwardFaultAgainst(Team faultyTeam)
     {
         Team winner = OpponentOf(faultyTeam);
+
+        float bonus = 0f;
+        if (ballRb != null)
+        {
+            Vector3 v = ballRb.linearVelocity;
+            float forward = (winner == Team.Blue) ? Mathf.Max(0f, v.z)
+                                                  : Mathf.Max(0f, -v.z);
+            float down = Mathf.Max(0f, -v.y);
+            bonus = Mathf.Min(
+                               velocityRewardForwardWeight * forward +
+                               velocityRewardDownWeight * down,
+                               velocityRewardMax);
+        }
+
         D($"FAULT against {faultyTeam}  -> point for {winner}");
         EndRally(winner);
     }
@@ -420,6 +436,22 @@ public class EnvironmentController : MonoBehaviour
         }
 
         /*------------------------------------------------------------------
+         * 2.5)  ASSIST / SET-SPIKE bonus
+         *       (teammate touched last, ball hasn’t crossed yet)
+         *-----------------------------------------------------------------*/
+        // Which counter to read?
+        int touchesSoFar = (agent.teamId == Team.Blue) ? touchesBlue : touchesRed;
+
+        if (lastHitterAgent != null &&
+            lastHitterAgent.teamId == agent.teamId &&      // same side
+            lastHitterAgent != agent &&                    // different player
+            touchesSoFar == 1)                            // still same rally phase
+        {
+            lastHitterAgent.AddReward(assistRewardSetter); // the setter
+            agent.AddReward(assistRewardSpiker); // the spiker
+        }
+
+        /*------------------------------------------------------------------
          * 3)  Legal touch – bookkeeping
          *-----------------------------------------------------------------*/
         UpdateLastHitter(agent);                     // sets lastHitter / Agent / Team
@@ -448,30 +480,6 @@ public class EnvironmentController : MonoBehaviour
         /*------------------------------------------------------------------
          * 5)  Rally continues – do NOT touch ballPassedOverNet here
          *-----------------------------------------------------------------*/
-        if (agent.teamId == Team.Blue)
-        {
-            switch (touchesBlue)
-            {
-                case 2:
-                    agent.AddReward(0.04f);
-                    break;
-                case 3:
-                    agent.AddReward(0.03f);
-                    break;
-            }
-        }
-        else if (agent.teamId == Team.Red)
-        {
-            switch (touchesRed)
-            {
-                case 2:
-                    agent.AddReward(0.04f);
-                    break;
-                case 3:
-                    agent.AddReward(0.03f);
-                    break;
-            }
-        }
     }
 
     // ============================================================================
@@ -493,7 +501,7 @@ public class EnvironmentController : MonoBehaviour
         ballRb.angularVelocity = Vector3.zero;
 
         /* --- tiny incentive for the server to start the rally ----------------- */
-        if (toucher != null) toucher.AddReward(0.02f);
+        if (toucher != null) toucher.AddReward(0.2f);
 
         Physics.SyncTransforms();           // make PhysX pick up the changes NOW
     }

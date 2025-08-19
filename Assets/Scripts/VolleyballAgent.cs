@@ -5,6 +5,13 @@ using Unity.MLAgents.Sensors;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+public enum Role
+{
+    Passer,
+    Hitter,
+    Generic
+}
+
 public class VolleyballAgent : Agent
 {
     [SerializeField] private GameObject area;
@@ -128,7 +135,7 @@ public class VolleyballAgent : Agent
         if (envController != null)
         {
             envController.RegisterTouch(this);
-            AddReward(0.05f);
+            AddReward(0.3f);
         }
     }
 
@@ -249,10 +256,23 @@ public class VolleyballAgent : Agent
 
         // 2.  SELF & BALL VELOCITIES  (unchanged)
         sensor.AddObservation(agentRb.linearVelocity / 10f);
+        sensor.AddObservation(envController.lastHitterAgent == this ? 1f : envController.lastHitterAgent == teammate ? -1f : 0f);
         Vector3 bv = ballRb.linearVelocity / 20f;
         sensor.AddObservation(bv.y);
         sensor.AddObservation(bv.z * agentRot);
         sensor.AddObservation(bv.x * agentRot);
+
+        Vector3 landWorld = PredictLanding(ballRb);         // world coords
+        Vector3 landRel = new Vector3(
+                (landWorld.x - transform.position.x) * agentRot,
+                (landWorld.y - transform.position.y),
+                (landWorld.z - transform.position.z) * agentRot
+            );
+
+        Vector3 landDir = landRel.sqrMagnitude > 1e-6f ? landRel.normalized : Vector3.zero;
+        sensor.AddObservation(landDir);                                      // 3 floats
+
+        sensor.AddObservation(Mathf.Clamp01(landRel.magnitude / maxDist)); // 1 float
 
         // 3.  TEAM-MATE INFO  (unchanged, your block here)
         if (teammate != null)
@@ -319,6 +339,16 @@ public class VolleyballAgent : Agent
                             : envController.touchesRed;
         sensor.AddObservation(Mathf.Clamp01(touchesUsed / 3f));
         sensor.AddObservation(CheckIfGrounded() ? 1f : 0f);
+    }
+
+    Vector3 PredictLanding(Rigidbody rb)
+    {
+        // simple parabola: y = y0 + v0y t – ½ g t²  set y=0
+        float vy = rb.linearVelocity.y;
+        float y0 = rb.position.y;
+        float t = (vy + Mathf.Sqrt(vy * vy + 2 * Physics.gravity.y * -y0))
+                   / -Physics.gravity.y;   // positive root
+        return rb.position + rb.linearVelocity * t + 0.5f * Physics.gravity * t * t;
     }
 
     // For human controller

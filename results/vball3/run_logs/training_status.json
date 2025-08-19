@@ -1,0 +1,47 @@
+{
+    "VolleyballAgent": {
+        "checkpoints": [
+            {
+                "steps": 499994,
+                "file_path": "results\\vball3\\VolleyballAgent\\VolleyballAgent-499994.onnx",
+                "reward": 0.061081034796578546,
+                "creation_time": 1755580042.5260255,
+                "auxillary_file_paths": [
+                    "results\\vball3\\VolleyballAgent\\VolleyballAgent-499994.pt"
+                ]
+            },
+            {
+                "steps": 999596,
+                "file_path": "results\\vball3\\VolleyballAgent\\VolleyballAgent-999596.onnx",
+                "reward": 0.935621883912847,
+                "creation_time": 1755580423.9041326,
+                "auxillary_file_paths": [
+                    "results\\vball3\\VolleyballAgent\\VolleyballAgent-999596.pt"
+                ]
+            },
+            {
+                "steps": 1007634,
+                "file_path": "results\\vball3\\VolleyballAgent\\VolleyballAgent-1007634.onnx",
+                "reward": 1.1726059423476134,
+                "creation_time": 1755580424.5061069,
+                "auxillary_file_paths": [
+                    "results\\vball3\\VolleyballAgent\\VolleyballAgent-1007634.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 1007634,
+            "file_path": "results\\vball3\\VolleyballAgent.onnx",
+            "reward": 1.1726059423476134,
+            "creation_time": 1755580424.5061069,
+            "auxillary_file_paths": [
+                "results\\vball3\\VolleyballAgent\\VolleyballAgent-1007634.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

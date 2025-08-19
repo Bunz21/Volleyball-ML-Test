@@ -1160,7 +1160,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 31
+    VectorObservationSize: 36
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -1169,7 +1169,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 681810c69c239974caf3c67aae72acb0, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -1760,7 +1760,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 31
+    VectorObservationSize: 36
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -1769,7 +1769,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 681810c69c239974caf3c67aae72acb0, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -3530,7 +3530,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 31
+    VectorObservationSize: 36
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -3539,7 +3539,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 681810c69c239974caf3c67aae72acb0, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -4836,6 +4836,8 @@ MonoBehaviour:
   velocityRewardDownWeight: 0.03
   velocityRewardMax: 0.4
   touchCooldown: 0.1
+  assistRewardSetter: 0.03
+  assistRewardSpiker: 0.04
   ball: {fileID: 3305385571356851491}
   ballRb: {fileID: 3970031669195569061}
   ballCol: {fileID: 5564502837026052100}
@@ -5539,7 +5541,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 31
+    VectorObservationSize: 36
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -5548,7 +5550,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 681810c69c239974caf3c67aae72acb0, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent

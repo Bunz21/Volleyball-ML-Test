@@ -1,0 +1,65 @@
+{
+    "VolleyballAgent": {
+        "checkpoints": [
+            {
+                "steps": 4999998,
+                "file_path": "results\\vball2\\VolleyballAgent\\VolleyballAgent-4999998.onnx",
+                "reward": 0.2606757686577535,
+                "creation_time": 1755574881.7422318,
+                "auxillary_file_paths": [
+                    "results\\vball2\\VolleyballAgent\\VolleyballAgent-4999998.pt"
+                ]
+            },
+            {
+                "steps": 5499572,
+                "file_path": "results\\vball2\\VolleyballAgent\\VolleyballAgent-5499572.onnx",
+                "reward": 0.6167921340093017,
+                "creation_time": 1755575269.9384,
+                "auxillary_file_paths": [
+                    "results\\vball2\\VolleyballAgent\\VolleyballAgent-5499572.pt"
+                ]
+            },
+            {
+                "steps": 5999968,
+                "file_path": "results\\vball2\\VolleyballAgent\\VolleyballAgent-5999968.onnx",
+                "reward": 0.2412710956164769,
+                "creation_time": 1755575649.137631,
+                "auxillary_file_paths": [
+                    "results\\vball2\\VolleyballAgent\\VolleyballAgent-5999968.pt"
+                ]
+            },
+            {
+                "steps": 6499982,
+                "file_path": "results\\vball2\\VolleyballAgent\\VolleyballAgent-6499982.onnx",
+                "reward": 0.26785453584207974,
+                "creation_time": 1755576033.7178006,
+                "auxillary_file_paths": [
+                    "results\\vball2\\VolleyballAgent\\VolleyballAgent-6499982.pt"
+                ]
+            },
+            {
+                "steps": 6549996,
+                "file_path": "results\\vball2\\VolleyballAgent\\VolleyballAgent-6549996.onnx",
+                "reward": 0.2812954427734498,
+                "creation_time": 1755576083.8451638,
+                "auxillary_file_paths": [
+                    "results\\vball2\\VolleyballAgent\\VolleyballAgent-6549996.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 6549996,
+            "file_path": "results\\vball2\\VolleyballAgent.onnx",
+            "reward": 0.2812954427734498,
+            "creation_time": 1755576083.8451638,
+            "auxillary_file_paths": [
+                "results\\vball2\\VolleyballAgent\\VolleyballAgent-6549996.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

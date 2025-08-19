@@ -38,7 +38,7 @@ behaviors:
     init_path: null
     keep_checkpoints: 5
     even_checkpoints: false
-    max_steps: 50000000
+    max_steps: 1000000
     time_horizon: 1000
     summary_freq: 20000
     threaded: false
@@ -66,10 +66,10 @@ engine_settings:
   no_graphics_monitor: false
 environment_parameters: null
 checkpoint_settings:
-  run_id: vball1
+  run_id: vball3
   initialize_from: null
   load_model: false
-  resume: true
+  resume: false
   force: false
   train_model: false
   inference: false
