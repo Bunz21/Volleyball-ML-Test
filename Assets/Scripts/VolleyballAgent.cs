@@ -135,7 +135,14 @@ public class VolleyballAgent : Agent
             if (envController != null)
             {
                 envController.RegisterTouch(this);
-                AddReward(0.05f);
+                // after you confirm it's a *legal* touch
+                Vector3 courtFwd = (this.teamId == Team.Blue) ? Vector3.back : Vector3.forward;
+                float dirScore = Vector3.Dot(ballRb.linearVelocity.normalized, courtFwd);   // –1..1
+                float speedScore = Mathf.Clamp01(ballRb.linearVelocity.magnitude / 15f);      // 0..1
+                float height = Mathf.Clamp01(ballRb.position.y / 4f);               // 0..1
+
+                float touchReward = 0.07f * dirScore * speedScore * (1f - height);
+                AddReward(touchReward);   // = +0.04 for a low, fast, forward bump
             }
             return;
         }
@@ -148,7 +155,7 @@ public class VolleyballAgent : Agent
             // Make sure it’s the *teammate*, not an opponent
             if (teammate != null && c.collider.gameObject == teammate.gameObject)
             {
-                AddReward(-0.05f);   // –0.05 by default
+                AddReward(-0.02f);
             }
         }
     }
@@ -158,7 +165,7 @@ public class VolleyballAgent : Agent
         if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent") &&
             teammate != null && c.collider.gameObject == teammate.gameObject)
         {
-            AddReward(-0.05f * 0.2f); // small drain each physics step
+            AddReward(-0.03f * 0.2f); // small drain each physics step
         }
     }
 
@@ -170,7 +177,7 @@ public class VolleyballAgent : Agent
     /// </summary>
     public void Jump()
     {
-        AddReward(-0.01f);
+        AddReward(-0.005f);
         jumpingTime = 0.2f;
         jumpStartingPos = agentRb.position;
     }
@@ -250,7 +257,7 @@ public class VolleyballAgent : Agent
         if (!grounded)
             AddReward(-airPenaltyPerStep);
 
-        AddReward(-0.0002f);
+        AddReward(-0.0005f);
 
         bool ballOnMySide = (teamId == Team.Blue) ? ball.transform.position.z < 0
                                            : ball.transform.position.z > 0;
@@ -261,7 +268,7 @@ public class VolleyballAgent : Agent
         if (role == Role.Hitter && teammate != null)
         {
             float dist = Vector3.Distance(transform.position, teammate.transform.position);
-            if (dist < 0.8f) AddReward(-0.0005f);   // crowding
+            if (dist < 0.8f) AddReward(-0.0003f);   // crowding
             else if (dist > 1.2f) AddReward(+0.0003f);   // good spacing
         }
 

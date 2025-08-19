@@ -76,7 +76,7 @@ public class EnvironmentController : MonoBehaviour
     public Team lastHitterTeam = Team.Default;
     public Team lastHitter = Team.Default;
     public VolleyballAgent lastHitterAgent = null;
-    //private bool ballPassedOverNet = false;
+    private bool ballPassedOverNet = false;
 
     //– Role & landing helpers -----------------------------------------
     private readonly Dictionary<VolleyballAgent, Role> currentRole = new();
@@ -282,7 +282,7 @@ public class EnvironmentController : MonoBehaviour
     {
         D("== ResetScene ==");
         resetTimer = 0;
-        //ballPassedOverNet = false;
+        ballPassedOverNet = false;
 
         touchesBlue = 0;
         touchesRed = 0;
@@ -484,10 +484,29 @@ public class EnvironmentController : MonoBehaviour
                 AwardFaultAgainst(lastHitter == Team.Default ? nextServer : lastHitter);
                 break;
 
-            //case Event.PassOverNet:           // cleared the net – mark it
-            //    ballPassedOverNet = true;
-            //    D("PassOverNet – flag set true");
-            //    break;
+            case Event.PassOverNet:
+                {
+                    // 1) Make sure the ball is now on the *opponent* side
+                    bool ballNowOnRedSide = ball.transform.position.z > 0f;
+                    bool ballNowOnBlueSide = ball.transform.position.z < 0f;
+
+                    Team hitter = lastHitterTeam;                 // who struck last
+                    if ((hitter == Team.Blue && !ballNowOnRedSide) ||
+                        (hitter == Team.Red && !ballNowOnBlueSide))
+                    {
+                        // crossed the trigger but bounced back – ignore
+                        break;
+                    }
+
+                    // 2) Only mark the FIRST crossing each rally
+                    if (!ballPassedOverNet)
+                    {
+                        ballPassedOverNet = true;
+                        lastHitterAgent?.AddReward(0.02f);        // forward-play bonus
+                        D("PassOverNet – flag set true");
+                    }
+                    break;
+                }
         }
     }
 
@@ -497,7 +516,7 @@ public class EnvironmentController : MonoBehaviour
     public void RegisterTouch(VolleyballAgent agent)
     {
         if (agent == null) return;                   // safety
-
+        ballPassedOverNet = false;
 
         /*------------------------------------------------------------------
          * 0)  Cool-down: ignore “micro-bounces” from the same collider
@@ -537,7 +556,7 @@ public class EnvironmentController : MonoBehaviour
         if (lastHitterAgent != null &&
             lastHitterAgent.teamId == agent.teamId &&      // same side
             lastHitterAgent != agent &&                    // different player
-            touchesSoFar == 1)                            // still same rally phase
+            touchesSoFar == 1 && !ballPassedOverNet)       // still same rally phase
         {
             lastHitterAgent.AddReward(assistRewardSetter); // the setter
             agent.AddReward(assistRewardSpiker); // the spiker
@@ -599,7 +618,7 @@ public class EnvironmentController : MonoBehaviour
         ballRb.angularVelocity = Vector3.zero;
 
         /* --- tiny incentive for the server to start the rally ----------------- */
-        if (toucher != null) toucher.AddReward(0.01f);
+        if (toucher != null) toucher.AddReward(0.06f);
 
         Physics.SyncTransforms();           // make PhysX pick up the changes NOW
     }
