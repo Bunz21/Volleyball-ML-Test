@@ -110,6 +110,9 @@ public class VolleyballAgent : Agent
             {
                 grounded = true; //then we're grounded
                 break;
+            } else
+            {
+                AddReward(-0.001f);
             }
         }
         return grounded;
@@ -124,7 +127,8 @@ public class VolleyballAgent : Agent
         if (!c.collider.CompareTag("ball")) return;
         if (envController != null)
         {
-            envController.RegisterTouch(this);  // <- NEW
+            envController.RegisterTouch(this);
+            AddReward(0.05f);
         }
     }
 
@@ -134,6 +138,7 @@ public class VolleyballAgent : Agent
     /// </summary>
     public void Jump()
     {
+        AddReward(-0.002f);
         jumpingTime = 0.2f;
         jumpStartingPos = agentRb.position;
     }
@@ -207,37 +212,49 @@ public class VolleyballAgent : Agent
 
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
-        AddReward(-0.0005f);
+        AddReward(-0.0002f);
+        bool ballOnMySide = (teamId == Team.Blue) ? ball.transform.position.z < 0
+                                           : ball.transform.position.z > 0;
+        if (ballOnMySide)
+            AddReward(-0.0008f);   // tweak; feels like 16 timesteps = one lost touch bonus
+        else
+            AddReward(+0.0004f);   // tiny incentive for keeping ball over there
+
         MoveAgent(actionBuffers.DiscreteActions);
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // 1) Proper yaw in [-1, 1] instead of quaternion.y
-        float yawDeg = transform.eulerAngles.y;                  // 0..360
-        float yawNorm = Mathf.DeltaAngle(0f, yawDeg) / 180f;     // -1..1
-        sensor.AddObservation(yawNorm);                          // 1 float
+        //----------------------------------------------------------------------
+        // 0.  CONSTANTS / PREP
+        //----------------------------------------------------------------------
+        const float maxDist = 20f;                        // you asked for 20
+        Vector3 envOrigin = area.transform.position;      // centre of *this* court
 
-        // 2) Direction to ball (mirrored by agentRot) + distance
+        //----------------------------------------------------------------------
+        // 1.  AGENT & BALL  (-- already in your code --)
+        //----------------------------------------------------------------------
+        float yawDeg = transform.eulerAngles.y;
+        float yawNorm = Mathf.DeltaAngle(0f, yawDeg) / 180f;
+        sensor.AddObservation(yawNorm);
+
         Vector3 toBall = new Vector3(
             (ballRb.position.x - transform.position.x) * agentRot,
             (ballRb.position.y - transform.position.y),
             (ballRb.position.z - transform.position.z) * agentRot
         );
         Vector3 dirToBall = toBall.sqrMagnitude > 1e-6f ? toBall.normalized : Vector3.zero;
-        sensor.AddObservation(dirToBall);                        // 3 floats
-        float maxDist = 20f;  // based on roof height
+        sensor.AddObservation(dirToBall);
         sensor.AddObservation(Mathf.Clamp01(toBall.magnitude / maxDist));
 
-        // Agent velocity (use Rigidbody.velocity, not linearVelocity)
-        sensor.AddObservation(agentRb.linearVelocity / 10f);     // 3 floats
-
-        // Ball velocity (mirror x/z with agentRot for symmetry)
+        // 2.  SELF & BALL VELOCITIES  (unchanged)
+        sensor.AddObservation(agentRb.linearVelocity / 10f);
         Vector3 bv = ballRb.linearVelocity / 20f;
-        sensor.AddObservation(bv.y);                             // 1
-        sensor.AddObservation(bv.z * agentRot);                  // 1
-        sensor.AddObservation(bv.x * agentRot);                  // 1
+        sensor.AddObservation(bv.y);
+        sensor.AddObservation(bv.z * agentRot);
+        sensor.AddObservation(bv.x * agentRot);
 
+        // 3.  TEAM-MATE INFO  (unchanged, your block here)
         if (teammate != null)
         {
             Vector3 toMate = new Vector3(
@@ -264,15 +281,45 @@ public class VolleyballAgent : Agent
             sensor.AddObservation(0f); // vx
         }
 
-        // Touches-left hint (normalized 0..1)
-        // You can set this from EnvironmentController onto each agent before DecideAction
-        float touchesUsed = (teamId == Team.Blue) ? envController.touchesBlue : envController.touchesRed;
-        sensor.AddObservation(Mathf.Clamp01(touchesUsed / 3f));
+        //----------------------------------------------------------------------
+        // 4.  NEW:  NET + GOALS
+        //----------------------------------------------------------------------
+        // Convert important points to *local* coordinates of the court prefab
+        Vector3 agentLocal = transform.position - envOrigin;
+        Vector3 netLocal = envController.net.transform.position - envOrigin;
+        Vector3 blueGoal = envController.blueGoal.transform.position - envOrigin;   // z = -5
+        Vector3 redGoal = envController.redGoal.transform.position - envOrigin;   // z =  5
 
-        // Grounded flag
+        Vector3 ownGoalLocal = (teamId == Team.Blue) ? blueGoal : redGoal;
+        Vector3 opponentGoalLocal = (teamId == Team.Blue) ? redGoal : blueGoal;
+
+        // --- Helper: add 3-float direction + 1-float distance
+        void AddDirAndDist(Vector3 targetLocal)
+        {
+            Vector3 toTgt = new Vector3(
+                (targetLocal.x - agentLocal.x) * agentRot,
+                (targetLocal.y - agentLocal.y),
+                (targetLocal.z - agentLocal.z) * agentRot
+            );
+            Vector3 dir = toTgt.sqrMagnitude > 1e-6f ? toTgt.normalized : Vector3.zero;
+            sensor.AddObservation(dir);                                     // 3 floats
+            sensor.AddObservation(Mathf.Clamp01(toTgt.magnitude / maxDist)); // 1 float
+        }
+
+        AddDirAndDist(netLocal);          // 4 floats
+        AddDirAndDist(ownGoalLocal);      // 4 floats
+        AddDirAndDist(opponentGoalLocal); // 4 floats
+                                          //  >>> +12 floats total
+
+        //----------------------------------------------------------------------
+        // 5.  TOUCHES & GROUNDED FLAG  (unchanged)
+        //----------------------------------------------------------------------
+        float touchesUsed = (teamId == Team.Blue)
+                            ? envController.touchesBlue
+                            : envController.touchesRed;
+        sensor.AddObservation(Mathf.Clamp01(touchesUsed / 3f));
         sensor.AddObservation(CheckIfGrounded() ? 1f : 0f);
     }
-
 
     // For human controller
     public override void Heuristic(in ActionBuffers actionsOut)

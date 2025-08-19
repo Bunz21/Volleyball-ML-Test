@@ -37,8 +37,9 @@ public class EnvironmentController : MonoBehaviour
     [SerializeField] private Rigidbody ballRb;
     [SerializeField] private Collider ballCol;
 
-    [SerializeField] private GameObject blueGoal;
-    [SerializeField] private GameObject redGoal;
+    [SerializeField] public GameObject blueGoal;
+    [SerializeField] public GameObject redGoal;
+    [SerializeField] public GameObject net;
 
     [SerializeField] private VolleyballAgent blueAgent;   // “primary” blue
     [SerializeField] private VolleyballAgent redAgent;    // “primary” red
@@ -281,7 +282,7 @@ public class EnvironmentController : MonoBehaviour
     /*------------------------------------------------------------
      * EndRally  – finalises a rally and starts the next one.
      *   winner : Team.Blue  or  Team.Red
-     *   bonus  : extra shaping reward (0 by default)test
+     *   bonus  : extra shaping reward (0 by default)
      *-----------------------------------------------------------*/
     private void EndRally(Team winner, float bonus = 0f)
     {
@@ -298,18 +299,15 @@ public class EnvironmentController : MonoBehaviour
             blueAgent.AddReward(-baseReward);
         }
 
-        // 2) UI feedback
-        //FlashFloor(winner);
-
-        // 3) next rally serves from the winning side
+        // 2) next rally serves from the winning side
         FlashFloor(winner);
         nextServer = winner;
 
-        // 4) finish episodes so stats roll up
+        // 3) finish episodes so stats roll up
         blueAgent.EndEpisode();
         redAgent.EndEpisode();
 
-        // 5) hard reset
+        // 4) hard reset
         D($"EndRally  winner={winner}  bonus={bonus:F2}");
         ResetScene();
     }
@@ -450,6 +448,30 @@ public class EnvironmentController : MonoBehaviour
         /*------------------------------------------------------------------
          * 5)  Rally continues – do NOT touch ballPassedOverNet here
          *-----------------------------------------------------------------*/
+        if (agent.teamId == Team.Blue)
+        {
+            switch (touchesBlue)
+            {
+                case 2:
+                    agent.AddReward(0.04f);
+                    break;
+                case 3:
+                    agent.AddReward(0.03f);
+                    break;
+            }
+        }
+        else if (agent.teamId == Team.Red)
+        {
+            switch (touchesRed)
+            {
+                case 2:
+                    agent.AddReward(0.04f);
+                    break;
+                case 3:
+                    agent.AddReward(0.03f);
+                    break;
+            }
+        }
     }
 
     // ============================================================================
@@ -471,7 +493,7 @@ public class EnvironmentController : MonoBehaviour
         ballRb.angularVelocity = Vector3.zero;
 
         /* --- tiny incentive for the server to start the rally ----------------- */
-        if (toucher != null) toucher.AddReward(0.05f);
+        if (toucher != null) toucher.AddReward(0.02f);
 
         Physics.SyncTransforms();           // make PhysX pick up the changes NOW
     }

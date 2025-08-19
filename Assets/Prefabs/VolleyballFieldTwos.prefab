@@ -1160,7 +1160,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 19
+    VectorObservationSize: 31
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -1760,7 +1760,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 19
+    VectorObservationSize: 31
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -3530,7 +3530,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 19
+    VectorObservationSize: 31
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -4841,6 +4841,7 @@ MonoBehaviour:
   ballCol: {fileID: 5564502837026052100}
   blueGoal: {fileID: 1255844912213302848}
   redGoal: {fileID: 7090448200735215638}
+  net: {fileID: 6346082201770604593}
   blueAgent: {fileID: 8535513846028624241}
   redAgent: {fileID: 1010130669073776822}
   MaxEnvironmentSteps: 0
@@ -5538,7 +5539,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 19
+    VectorObservationSize: 31
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
