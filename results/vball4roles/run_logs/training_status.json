@@ -1,0 +1,65 @@
+{
+    "VolleyballAgent": {
+        "checkpoints": [
+            {
+                "steps": 44999990,
+                "file_path": "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-44999990.onnx",
+                "reward": 0.29029364462058166,
+                "creation_time": 1755622009.7408159,
+                "auxillary_file_paths": [
+                    "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-44999990.pt"
+                ]
+            },
+            {
+                "steps": 45499482,
+                "file_path": "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-45499482.onnx",
+                "reward": 1.8072877105544596,
+                "creation_time": 1755622384.9762175,
+                "auxillary_file_paths": [
+                    "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-45499482.pt"
+                ]
+            },
+            {
+                "steps": 45999986,
+                "file_path": "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-45999986.onnx",
+                "reward": 0.32139819166902023,
+                "creation_time": 1755622763.5379608,
+                "auxillary_file_paths": [
+                    "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-45999986.pt"
+                ]
+            },
+            {
+                "steps": 46499646,
+                "file_path": "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-46499646.onnx",
+                "reward": 1.2535494078734988,
+                "creation_time": 1755623146.1792889,
+                "auxillary_file_paths": [
+                    "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-46499646.pt"
+                ]
+            },
+            {
+                "steps": 46759786,
+                "file_path": "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-46759786.onnx",
+                "reward": 0.3615213006734848,
+                "creation_time": 1755623353.1837826,
+                "auxillary_file_paths": [
+                    "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-46759786.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 46759786,
+            "file_path": "results\\vball4roles\\VolleyballAgent.onnx",
+            "reward": 0.3615213006734848,
+            "creation_time": 1755623353.1837826,
+            "auxillary_file_paths": [
+                "results\\vball4roles\\VolleyballAgent\\VolleyballAgent-46759786.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

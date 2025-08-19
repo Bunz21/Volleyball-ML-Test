@@ -1169,7 +1169,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 681810c69c239974caf3c67aae72acb0, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -1193,7 +1193,7 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 5000
+  MaxStep: 10000
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 2783493210394317129}
   teamId: 0
@@ -1770,7 +1770,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 681810c69c239974caf3c67aae72acb0, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -1794,7 +1794,7 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 5000
+  MaxStep: 10000
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 8535513846028624241}
   teamId: 0
@@ -3541,7 +3541,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 681810c69c239974caf3c67aae72acb0, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -3565,7 +3565,7 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 5000
+  MaxStep: 10000
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 1010130669073776822}
   teamId: 1
@@ -5553,7 +5553,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 681810c69c239974caf3c67aae72acb0, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -5577,7 +5577,7 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 5000
+  MaxStep: 10000
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 2756245957533092973}
   teamId: 1

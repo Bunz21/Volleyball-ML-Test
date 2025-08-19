@@ -124,18 +124,45 @@ public class VolleyballAgent : Agent
     }
 
     /// <summary>
-    /// Called when agent collides with the ball
+    /// Called when agent collides with the something
     /// </summary>
-    // Called when agent collides with the ball
+    // Called when agent collides with the something
     void OnCollisionEnter(Collision c)
     {
-        if (!c.collider.CompareTag("ball")) return;
-        if (envController != null)
+        //  ---   BALL TOUCH   --------------------------------------------------
+        if (c.collider.CompareTag("ball"))
         {
-            envController.RegisterTouch(this);
-            AddReward(0.3f);
+            if (envController != null)
+            {
+                envController.RegisterTouch(this);
+                AddReward(0.05f);
+            }
+            return;
+        }
+
+        //  ---   TEAM-MATE BUMP   ----------------------------------------------
+        // “CompareTag("agent")” is the cheapest, but you can also
+        // check `c.collider.GetComponent<VolleyballAgent>()` if you prefer
+        if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent"))
+        {
+            // Make sure it’s the *teammate*, not an opponent
+            if (teammate != null && c.collider.gameObject == teammate.gameObject)
+            {
+                AddReward(-0.05f);   // –0.05 by default
+            }
         }
     }
+
+    void OnCollisionStay(Collision c)
+    {
+        if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent") &&
+            teammate != null && c.collider.gameObject == teammate.gameObject)
+        {
+            AddReward(-0.05f * 0.2f); // small drain each physics step
+        }
+    }
+
+
 
 
     /// <summary>
@@ -143,7 +170,7 @@ public class VolleyballAgent : Agent
     /// </summary>
     public void Jump()
     {
-        AddReward(-0.002f);
+        AddReward(-0.01f);
         jumpingTime = 0.2f;
         jumpStartingPos = agentRb.position;
     }
@@ -217,7 +244,14 @@ public class VolleyballAgent : Agent
 
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
+        const float airPenaltyPerStep = 0.001f;   // tune as you like
+
+        bool grounded = CheckIfGrounded();
+        if (!grounded)
+            AddReward(-airPenaltyPerStep);
+
         AddReward(-0.0002f);
+
         bool ballOnMySide = (teamId == Team.Blue) ? ball.transform.position.z < 0
                                            : ball.transform.position.z > 0;
         if (ballOnMySide)
@@ -259,8 +293,8 @@ public class VolleyballAgent : Agent
         sensor.AddObservation(Mathf.Clamp01(toBall.magnitude / maxDist));
 
         // 2.  SELF & BALL VELOCITIES  (unchanged)
-        sensor.AddObservation(agentRb.linearVelocity / 10f);
-        Vector3 bv = ballRb.linearVelocity / 20f;
+        sensor.AddObservation(agentRb.linearVelocity / 15f);
+        Vector3 bv = ballRb.linearVelocity / 15f;
         sensor.AddObservation(bv.y);
         sensor.AddObservation(bv.z * agentRot);
         sensor.AddObservation(bv.x * agentRot);
@@ -271,6 +305,7 @@ public class VolleyballAgent : Agent
                 (landWorld.y - transform.position.y),
                 (landWorld.z - transform.position.z) * agentRot
             );
+        landRel.y = 0;
 
         Vector3 landDir = landRel.sqrMagnitude > 1e-6f ? landRel.normalized : Vector3.zero;
         sensor.AddObservation(landDir);                                      // 3 floats
@@ -324,6 +359,7 @@ public class VolleyballAgent : Agent
                 (targetLocal.y - agentLocal.y),
                 (targetLocal.z - agentLocal.z) * agentRot
             );
+            toTgt.y = 0;
             Vector3 dir = toTgt.sqrMagnitude > 1e-6f ? toTgt.normalized : Vector3.zero;
             sensor.AddObservation(dir);                                     // 3 floats
             sensor.AddObservation(Mathf.Clamp01(toTgt.magnitude / maxDist)); // 1 float

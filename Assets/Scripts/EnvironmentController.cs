@@ -82,7 +82,9 @@ public class EnvironmentController : MonoBehaviour
     private readonly Dictionary<VolleyballAgent, Role> currentRole = new();
     private Vector3 predictedLanding;      // court-local
 
-    private const float roleTieEpsilon = 0.05f; // m² in X-Z
+    private const float roleTieEpsilon = 0.25f; // m² in X-Z
+    private bool rolesLockedBlue = false;
+    private bool rolesLockedRed = false;
 
     //– Serve & reset logic --------------------------------------------
     private Team nextServer = Team.Default; // Default = “random first serve”
@@ -165,13 +167,14 @@ public class EnvironmentController : MonoBehaviour
     // -----------------------------------------------------------------------------
     private void FixedUpdate()
     {
+        // --- role update every tick --------------------------------
+        predictedLanding = PredictLanding(ballRb);        // helper below
+        UpdateRoles();                                    // assigns Passer/Hitter
+
         resetTimer++;
         if (MaxEnvironmentSteps > 0 && resetTimer >= MaxEnvironmentSteps)
         {
             D($"TIMEOUT – {MaxEnvironmentSteps} steps reached");
-            // --- role update every tick --------------------------------
-            predictedLanding = PredictLanding(ballRb);        // helper below
-            UpdateRoles();                                    // assigns Passer/Hitter
             blueAgent.EpisodeInterrupted();
             redAgent.EpisodeInterrupted();
             ResetScene();
@@ -215,6 +218,36 @@ public class EnvironmentController : MonoBehaviour
         var agents = AgentsList.FindAll(a => a.teamId == team);
         if (agents.Count != 2) return;
 
+        // decide if we are locked
+        bool locked = (team == Team.Blue) ? rolesLockedBlue : rolesLockedRed;
+
+        // If the side already made >=2 touches this rally, lock the roles
+        // until the ball crosses the net and touches reset to 0.
+        if (!locked && touchCount(this) >= 2)
+        {
+            if (team == Team.Blue) rolesLockedBlue = true;
+            else rolesLockedRed = true;
+            locked = true;
+        }
+
+        // 2) unlock automatically when the ball is on the OPPONENT side
+        //    (touch counters for our side become 0 when the other team touches)
+        if (locked && touchCount(this) == 0)
+        {
+            if (team == Team.Blue) rolesLockedBlue = false;
+            else rolesLockedRed = false;
+
+            // return both to Generic
+            agents[0].role = Role.Generic;
+            agents[1].role = Role.Generic;
+            return;
+        }
+
+        // If locked, keep current assignments
+        if (locked) return;
+        predictedLanding.x = Mathf.Clamp(predictedLanding.x, -6.7f, 6.7f);
+        predictedLanding.z = Mathf.Clamp(predictedLanding.z, -9.5f, 9.5f);
+
         // distance² to landing on court plane
         float d0 = (new Vector2(agents[0].transform.localPosition.x,
                                 agents[0].transform.localPosition.z) -
@@ -222,9 +255,19 @@ public class EnvironmentController : MonoBehaviour
         float d1 = (new Vector2(agents[1].transform.localPosition.x,
                                 agents[1].transform.localPosition.z) -
                     new Vector2(predictedLanding.x, predictedLanding.z)).sqrMagnitude;
+        // Ignore role assignment if ball is predicted to land on opponent side
+        bool ballOnOurSide = (team == Team.Blue)
+                             ? predictedLanding.z < 0f   // blue court is z < 0
+                             : predictedLanding.z > 0f;  // red court is z > 0
+        if (!ballOnOurSide)
+        {
+            agents[0].role = agents[1].role = Role.Generic;
+            return;
+        }
+
 
         // tie-break once per rally start
-        if (Mathf.Abs(d0 - d1) < roleTieEpsilon)
+        if (touchCount(this) == 0 && Mathf.Abs(d0 - d1) < roleTieEpsilon)
             (d0, d1) = (Random.value < 0.5f) ? (0f, 1f) : (1f, 0f);
 
         // Passer = closer; Hitter = farther
@@ -249,6 +292,8 @@ public class EnvironmentController : MonoBehaviour
 
         /* ---------- 1. teleport / zero-out every agent ------------------------- */
         int blueSlot = 0, redSlot = 0;
+        rolesLockedBlue = rolesLockedRed = false;
+
         foreach (var ag in AgentsList)
         {
             Team team = ag.teamId;
@@ -453,6 +498,7 @@ public class EnvironmentController : MonoBehaviour
     {
         if (agent == null) return;                   // safety
 
+
         /*------------------------------------------------------------------
          * 0)  Cool-down: ignore “micro-bounces” from the same collider
          *-----------------------------------------------------------------*/
@@ -502,6 +548,12 @@ public class EnvironmentController : MonoBehaviour
          *-----------------------------------------------------------------*/
         UpdateLastHitter(agent);                     // sets lastHitter / Agent / Team
 
+        // reset the *other* side’s counter because possession changed
+        if (agent.teamId == Team.Blue)
+            touchesRed = 0;
+        else
+            touchesBlue = 0;
+
         if (agent.teamId == Team.Blue) touchesBlue++;
         else touchesRed++;
 
@@ -547,7 +599,7 @@ public class EnvironmentController : MonoBehaviour
         ballRb.angularVelocity = Vector3.zero;
 
         /* --- tiny incentive for the server to start the rally ----------------- */
-        if (toucher != null) toucher.AddReward(0.2f);
+        if (toucher != null) toucher.AddReward(0.01f);
 
         Physics.SyncTransforms();           // make PhysX pick up the changes NOW
     }
