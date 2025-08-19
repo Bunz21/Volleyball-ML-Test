@@ -2,31 +2,40 @@
     "VolleyballAgent": {
         "checkpoints": [
             {
-                "steps": 499708,
-                "file_path": "results\\vball5test\\VolleyballAgent\\VolleyballAgent-499708.onnx",
-                "reward": -2.2059358954429626,
-                "creation_time": 1755630860.768746,
+                "steps": 499816,
+                "file_path": "results\\vball5test\\VolleyballAgent\\VolleyballAgent-499816.onnx",
+                "reward": -5.221800009409587,
+                "creation_time": 1755632496.3163164,
                 "auxillary_file_paths": [
-                    "results\\vball5test\\VolleyballAgent\\VolleyballAgent-499708.pt"
+                    "results\\vball5test\\VolleyballAgent\\VolleyballAgent-499816.pt"
                 ]
             },
             {
-                "steps": 616888,
-                "file_path": "results\\vball5test\\VolleyballAgent\\VolleyballAgent-616888.onnx",
-                "reward": -1.6524122059345245,
-                "creation_time": 1755630955.827794,
+                "steps": 999496,
+                "file_path": "results\\vball5test\\VolleyballAgent\\VolleyballAgent-999496.onnx",
+                "reward": null,
+                "creation_time": 1755632902.7563138,
                 "auxillary_file_paths": [
-                    "results\\vball5test\\VolleyballAgent\\VolleyballAgent-616888.pt"
+                    "results\\vball5test\\VolleyballAgent\\VolleyballAgent-999496.pt"
+                ]
+            },
+            {
+                "steps": 1001496,
+                "file_path": "results\\vball5test\\VolleyballAgent\\VolleyballAgent-1001496.onnx",
+                "reward": -3.4692494869232178,
+                "creation_time": 1755632902.9553525,
+                "auxillary_file_paths": [
+                    "results\\vball5test\\VolleyballAgent\\VolleyballAgent-1001496.pt"
                 ]
             }
         ],
         "final_checkpoint": {
-            "steps": 616888,
+            "steps": 1001496,
             "file_path": "results\\vball5test\\VolleyballAgent.onnx",
-            "reward": -1.6524122059345245,
-            "creation_time": 1755630955.827794,
+            "reward": -3.4692494869232178,
+            "creation_time": 1755632902.9553525,
             "auxillary_file_paths": [
-                "results\\vball5test\\VolleyballAgent\\VolleyballAgent-616888.pt"
+                "results\\vball5test\\VolleyballAgent\\VolleyballAgent-1001496.pt"
             ]
         }
     },

@@ -141,7 +141,7 @@ public class VolleyballAgent : Agent
                 float speedScore = Mathf.Clamp01(ballRb.linearVelocity.magnitude / 15f);      // 0..1
                 float height = Mathf.Clamp01(ballRb.position.y / 4f);               // 0..1
 
-                float touchReward = 0.07f * dirScore * speedScore * (1f - height);
+                float touchReward = 0.4f * dirScore * speedScore * (1f - height);
                 AddReward(touchReward);   // = +0.04 for a low, fast, forward bump
             }
             return;
@@ -177,7 +177,7 @@ public class VolleyballAgent : Agent
     /// </summary>
     public void Jump()
     {
-        AddReward(-0.005f);
+        AddReward(-0.0005f);
         jumpingTime = 0.2f;
         jumpStartingPos = agentRb.position;
     }
@@ -257,19 +257,19 @@ public class VolleyballAgent : Agent
         if (!grounded)
             AddReward(-airPenaltyPerStep);
 
-        AddReward(-0.0005f);
+        AddReward(-0.0001f);
 
         bool ballOnMySide = (teamId == Team.Blue) ? ball.transform.position.z < 0
                                            : ball.transform.position.z > 0;
         if (ballOnMySide)
-            AddReward(-0.0008f);   // tweak; feels like 16 timesteps = one lost touch bonus
+            AddReward(-0.0009f);   // tweak; feels like 16 timesteps = one lost touch bonus
         else
-            AddReward(+0.0004f);   // tiny incentive for keeping ball over there
+            AddReward(+0.0005f);   // tiny incentive for keeping ball over there
         if (role == Role.Hitter && teammate != null)
         {
             float dist = Vector3.Distance(transform.position, teammate.transform.position);
-            if (dist < 0.8f) AddReward(-0.0003f);   // crowding
-            else if (dist > 1.2f) AddReward(+0.0003f);   // good spacing
+            if (dist < 0.8f) AddReward(-0.0001f);   // crowding
+            else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
         }
 
         MoveAgent(actionBuffers.DiscreteActions);

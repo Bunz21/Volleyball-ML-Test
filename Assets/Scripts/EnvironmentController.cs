@@ -27,12 +27,12 @@ public class EnvironmentController : MonoBehaviour
     ********************************************************/
 
     //– Gameplay tuning -------------------------------------------------
-    [SerializeField] private float velocityRewardForwardWeight = 0.02f;
-    [SerializeField] private float velocityRewardDownWeight = 0.03f;
+    [SerializeField] private float velocityRewardForwardWeight = 0.03f;
+    [SerializeField] private float velocityRewardDownWeight = 0.04f;
     [SerializeField] private float velocityRewardMax = 0.40f;
     [SerializeField] private float touchCooldown = 0.20f;   // s
-    [SerializeField] private float assistRewardSetter = 0.03f;  // earlier touch
-    [SerializeField] private float assistRewardSpiker = 0.04f;  // current touch
+    [SerializeField] private float assistRewardSetter = 0.15f;  // earlier touch
+    [SerializeField] private float assistRewardSpiker = 0.2f;  // current touch
 
     //– Scene references ------------------------------------------------
     [SerializeField] private GameObject ball;
@@ -77,6 +77,7 @@ public class EnvironmentController : MonoBehaviour
     public Team lastHitter = Team.Default;
     public VolleyballAgent lastHitterAgent = null;
     private bool ballPassedOverNet = false;
+    private bool serveTouched = false;
 
     //– Role & landing helpers -----------------------------------------
     private readonly Dictionary<VolleyballAgent, Role> currentRole = new();
@@ -106,7 +107,7 @@ public class EnvironmentController : MonoBehaviour
     // Simple one-line logger.  Toggle VERBOSE to silence everything
     // ------------------------------------------------------------
     #if UNITY_EDITOR
-    const bool VERBOSE = false;
+    const bool VERBOSE = true;
     #else
     const bool VERBOSE = false;
     #endif
@@ -174,6 +175,13 @@ public class EnvironmentController : MonoBehaviour
         resetTimer++;
         if (MaxEnvironmentSteps > 0 && resetTimer >= MaxEnvironmentSteps)
         {
+            if (!serveTouched)        // no one ever hit the ball
+            {
+                const float idlePenalty = -0.4f;   // tune magnitude
+                blueAgent.AddReward(idlePenalty);
+                redAgent.AddReward(idlePenalty);
+            }
+
             D($"TIMEOUT – {MaxEnvironmentSteps} steps reached");
             blueAgent.EpisodeInterrupted();
             redAgent.EpisodeInterrupted();
@@ -283,6 +291,7 @@ public class EnvironmentController : MonoBehaviour
         D("== ResetScene ==");
         resetTimer = 0;
         ballPassedOverNet = false;
+        serveTouched = false;
 
         touchesBlue = 0;
         touchesRed = 0;
@@ -502,7 +511,7 @@ public class EnvironmentController : MonoBehaviour
                     if (!ballPassedOverNet)
                     {
                         ballPassedOverNet = true;
-                        lastHitterAgent?.AddReward(0.02f);        // forward-play bonus
+                        lastHitterAgent?.AddReward(0.2f);        // forward-play bonus
                         D("PassOverNet – flag set true");
                     }
                     break;
@@ -607,6 +616,7 @@ public class EnvironmentController : MonoBehaviour
         if (!isBallFrozen) return;          // already active – nothing to do
 
         isBallFrozen = false;
+        serveTouched = true;
         D($"Un-freeze on first touch by {toucher.teamId}");
 
         /* --- restore normal collider / physics -------------------------------- */
@@ -618,7 +628,7 @@ public class EnvironmentController : MonoBehaviour
         ballRb.angularVelocity = Vector3.zero;
 
         /* --- tiny incentive for the server to start the rally ----------------- */
-        if (toucher != null) toucher.AddReward(0.06f);
+        if (toucher != null) toucher.AddReward(0.5f);
 
         Physics.SyncTransforms();           // make PhysX pick up the changes NOW
     }
