@@ -19,6 +19,7 @@ public class VolleyballAgent : Agent
     Rigidbody agentRb;
     BehaviorParameters behaviorParameters;
     public Team teamId;
+    [HideInInspector] public Role role = Role.Generic;
 
     // To get ball's location for observations
     public GameObject ball;
@@ -117,9 +118,6 @@ public class VolleyballAgent : Agent
             {
                 grounded = true; //then we're grounded
                 break;
-            } else
-            {
-                AddReward(-0.001f);
             }
         }
         return grounded;
@@ -226,6 +224,12 @@ public class VolleyballAgent : Agent
             AddReward(-0.0008f);   // tweak; feels like 16 timesteps = one lost touch bonus
         else
             AddReward(+0.0004f);   // tiny incentive for keeping ball over there
+        if (role == Role.Hitter && teammate != null)
+        {
+            float dist = Vector3.Distance(transform.position, teammate.transform.position);
+            if (dist < 0.8f) AddReward(-0.0005f);   // crowding
+            else if (dist > 1.2f) AddReward(+0.0003f);   // good spacing
+        }
 
         MoveAgent(actionBuffers.DiscreteActions);
     }
@@ -256,7 +260,6 @@ public class VolleyballAgent : Agent
 
         // 2.  SELF & BALL VELOCITIES  (unchanged)
         sensor.AddObservation(agentRb.linearVelocity / 10f);
-        sensor.AddObservation(envController.lastHitterAgent == this ? 1f : envController.lastHitterAgent == teammate ? -1f : 0f);
         Vector3 bv = ballRb.linearVelocity / 20f;
         sensor.AddObservation(bv.y);
         sensor.AddObservation(bv.z * agentRot);
@@ -330,6 +333,13 @@ public class VolleyballAgent : Agent
         AddDirAndDist(ownGoalLocal);      // 4 floats
         AddDirAndDist(opponentGoalLocal); // 4 floats
                                           //  >>> +12 floats total
+
+        sensor.AddObservation(role == Role.Passer ? 1f : 0f);
+        sensor.AddObservation(role == Role.Hitter ? 1f : 0f);
+
+        float lastTouchFlag = (envController.lastHitterAgent == this) ? 1f :
+                       (envController.lastHitterAgent == teammate) ? -1f : 0f;
+        sensor.AddObservation(lastTouchFlag);
 
         //----------------------------------------------------------------------
         // 5.  TOUCHES & GROUNDED FLAG  (unchanged)

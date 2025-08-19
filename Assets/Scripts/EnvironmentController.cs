@@ -78,6 +78,12 @@ public class EnvironmentController : MonoBehaviour
     public VolleyballAgent lastHitterAgent = null;
     //private bool ballPassedOverNet = false;
 
+    //– Role & landing helpers -----------------------------------------
+    private readonly Dictionary<VolleyballAgent, Role> currentRole = new();
+    private Vector3 predictedLanding;      // court-local
+
+    private const float roleTieEpsilon = 0.05f; // m² in X-Z
+
     //– Serve & reset logic --------------------------------------------
     private Team nextServer = Team.Default; // Default = “random first serve”
     private bool isBallFrozen = false;
@@ -163,6 +169,9 @@ public class EnvironmentController : MonoBehaviour
         if (MaxEnvironmentSteps > 0 && resetTimer >= MaxEnvironmentSteps)
         {
             D($"TIMEOUT – {MaxEnvironmentSteps} steps reached");
+            // --- role update every tick --------------------------------
+            predictedLanding = PredictLanding(ballRb);        // helper below
+            UpdateRoles();                                    // assigns Passer/Hitter
             blueAgent.EpisodeInterrupted();
             redAgent.EpisodeInterrupted();
             ResetScene();
@@ -183,6 +192,44 @@ public class EnvironmentController : MonoBehaviour
         // Blue faces +Z (0°), Red faces -Z (180°)
         float yaw = (team == Team.Blue) ? 0f : 180f;
         return Quaternion.Euler(0f, yaw, 0f);
+    }
+
+    Vector3 PredictLanding(Rigidbody rb)
+    {
+        float vy = rb.linearVelocity.y, y0 = rb.position.y;
+        float t = (vy + Mathf.Sqrt(vy * vy + 2 * Physics.gravity.y * -y0)) / -Physics.gravity.y;
+        return transform.InverseTransformPoint(
+            rb.position + rb.linearVelocity * t + 0.5f * Physics.gravity * t * t); // local
+    }
+
+    void UpdateRoles()
+    {
+        // work per side
+        AssignRoles(Team.Blue, env => env.touchesBlue);
+        AssignRoles(Team.Red, env => env.touchesRed);
+    }
+
+    void AssignRoles(Team team, System.Func<EnvironmentController, int> touchCount)
+    {
+        // grab the two agents for that side
+        var agents = AgentsList.FindAll(a => a.teamId == team);
+        if (agents.Count != 2) return;
+
+        // distance² to landing on court plane
+        float d0 = (new Vector2(agents[0].transform.localPosition.x,
+                                agents[0].transform.localPosition.z) -
+                    new Vector2(predictedLanding.x, predictedLanding.z)).sqrMagnitude;
+        float d1 = (new Vector2(agents[1].transform.localPosition.x,
+                                agents[1].transform.localPosition.z) -
+                    new Vector2(predictedLanding.x, predictedLanding.z)).sqrMagnitude;
+
+        // tie-break once per rally start
+        if (Mathf.Abs(d0 - d1) < roleTieEpsilon)
+            (d0, d1) = (Random.value < 0.5f) ? (0f, 1f) : (1f, 0f);
+
+        // Passer = closer; Hitter = farther
+        agents[0].role = (d0 < d1) ? Role.Passer : Role.Hitter;
+        agents[1].role = (d0 < d1) ? Role.Hitter : Role.Passer;
     }
 
     // -----------------------------------------------------------------------------
@@ -224,6 +271,8 @@ public class EnvironmentController : MonoBehaviour
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
             }
+
+            ag.role = Role.Generic;
         }
 
         /* ---------- 2. reset the ball ---------- */
@@ -236,9 +285,6 @@ public class EnvironmentController : MonoBehaviour
     // -----------------------------------------------------------------------------
     //  ResetBall – decides side, teleports, clears motion, re-freezes if wanted
     // -----------------------------------------------------------------------------
-    /********************************************************
-    *  ResetBall – decide court, teleport, freeze if needed
-    ********************************************************/
     private void ResetBall()
     {
         /* 1) Decide which court serves */

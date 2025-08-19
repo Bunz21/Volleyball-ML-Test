@@ -1160,7 +1160,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 36
+    VectorObservationSize: 38
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -1197,6 +1197,7 @@ MonoBehaviour:
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 2783493210394317129}
   teamId: 0
+  role: 2
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
@@ -1760,7 +1761,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 36
+    VectorObservationSize: 38
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -1797,6 +1798,7 @@ MonoBehaviour:
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 8535513846028624241}
   teamId: 0
+  role: 2
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
@@ -3530,7 +3532,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 36
+    VectorObservationSize: 38
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -3567,6 +3569,7 @@ MonoBehaviour:
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 1010130669073776822}
   teamId: 1
+  role: 2
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
@@ -5541,7 +5544,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 36
+    VectorObservationSize: 38
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
@@ -5578,6 +5581,7 @@ MonoBehaviour:
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 2756245957533092973}
   teamId: 1
+  role: 2
   ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
