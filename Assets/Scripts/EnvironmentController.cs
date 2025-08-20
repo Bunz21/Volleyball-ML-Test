@@ -170,7 +170,7 @@ public class EnvironmentController : MonoBehaviour
     {
         // --- role update every tick --------------------------------
         predictedLanding = PredictLanding(ballRb);        // helper below
-        UpdateRoles();                                    // assigns Passer/Hitter
+        //UpdateRoles();                                    // assigns Passer/Hitter
 
         resetTimer++;
         if (MaxEnvironmentSteps > 0 && resetTimer >= MaxEnvironmentSteps)
@@ -335,7 +335,18 @@ public class EnvironmentController : MonoBehaviour
                 rb.angularVelocity = Vector3.zero;
             }
 
-            ag.role = Role.Generic;
+            if (slot == 0)
+            {
+                ag.role = Role.Hitter;
+            }
+            else if (slot == 1)
+            {
+                ag.role = Role.Passer;
+            }
+            else
+            {
+                ag.role = Role.Generic;
+            }
         }
 
         /* ---------- 2. reset the ball ---------- */
@@ -520,7 +531,11 @@ public class EnvironmentController : MonoBehaviour
                     if (!ballPassedOverNet)
                     {
                         ballPassedOverNet = true;
-                        lastHitterAgent?.AddReward(0.2f);        // forward-play bonus
+
+                        if (lastHitterAgent.role == Role.Hitter)
+                        {
+                            lastHitterAgent.AddReward(0.4f);        // forward-play bonus
+                        }
                         D("PassOverNet – flag set true");
                     }
                     break;

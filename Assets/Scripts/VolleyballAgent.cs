@@ -143,6 +143,12 @@ public class VolleyballAgent : Agent
 
                 float touchReward = 0.4f * dirScore * speedScore * (1f - height);
                 AddReward(touchReward);   // = +0.04 for a low, fast, forward bump
+
+                if (envController.lastHitterAgent != null && this != envController.lastHitterAgent && envController.lastHitterTeam == this.teamId && envController.lastHitterAgent.role == Role.Passer)
+                {
+                    envController.lastHitterAgent.AddReward(0.3f);
+                }
+
             }
             return;
         }
@@ -271,24 +277,57 @@ public class VolleyballAgent : Agent
             if (dist < 0.8f) AddReward(-0.0001f);   // crowding
             else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
         }
+        else if (role == Role.Passer && teammate != null)
+        {
+            float dist = Vector3.Distance(transform.position, envController.net.transform.position);
+            if (dist < 0.8f) AddReward(-0.0001f);   // crowding
+            else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
+        }
 
-        MoveAgent(actionBuffers.DiscreteActions);
+            MoveAgent(actionBuffers.DiscreteActions);
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
+        // --- tiny local toggle/throttle (change here if you want) ---
+        const bool LOG_OBS = false;          // set false to silence
+        const int LOG_EVERY_N_STEPS = 1;    // 1 = log every decision
+
+        // Local buffer + lightweight wrappers so we don't touch the rest of your class
+        System.Text.StringBuilder _sb = null;
+        System.Collections.Generic.List<float> _obs = null;
+
+        void AddF(float f)
+        {
+            sensor.AddObservation(f);
+            if (LOG_OBS) _obs.Add(f);
+        }
+        void AddV(Vector3 v)
+        {
+            sensor.AddObservation(v);
+            if (LOG_OBS) { _obs.Add(v.x); _obs.Add(v.y); _obs.Add(v.z); }
+        }
+
         //----------------------------------------------------------------------
         // 0.  CONSTANTS / PREP
         //----------------------------------------------------------------------
         const float maxDist = 20f;                        // you asked for 20
         Vector3 envOrigin = area.transform.position;      // centre of *this* court
 
+        if (LOG_OBS)
+        {
+            if (_obs == null) _obs = new System.Collections.Generic.List<float>(64);
+            _obs.Clear();
+            if (_sb == null) _sb = new System.Text.StringBuilder(512);
+            _sb.Clear();
+        }
+
         //----------------------------------------------------------------------
         // 1.  AGENT & BALL  (-- already in your code --)
         //----------------------------------------------------------------------
         float yawDeg = transform.eulerAngles.y;
         float yawNorm = Mathf.DeltaAngle(0f, yawDeg) / 180f;
-        sensor.AddObservation(yawNorm);
+        AddF(yawNorm);
 
         Vector3 toBall = new Vector3(
             (ballRb.position.x - transform.position.x) * agentRot,
@@ -296,15 +335,15 @@ public class VolleyballAgent : Agent
             (ballRb.position.z - transform.position.z) * agentRot
         );
         Vector3 dirToBall = toBall.sqrMagnitude > 1e-6f ? toBall.normalized : Vector3.zero;
-        sensor.AddObservation(dirToBall);
-        sensor.AddObservation(Mathf.Clamp01(toBall.magnitude / maxDist));
+        AddV(dirToBall);
+        AddF(Mathf.Clamp01(toBall.magnitude / maxDist));
 
         // 2.  SELF & BALL VELOCITIES  (unchanged)
-        sensor.AddObservation(agentRb.linearVelocity / 15f);
+        AddV(agentRb.linearVelocity / 15f);
         Vector3 bv = ballRb.linearVelocity / 15f;
-        sensor.AddObservation(bv.y);
-        sensor.AddObservation(bv.z * agentRot);
-        sensor.AddObservation(bv.x * agentRot);
+        AddF(bv.y);
+        AddF(bv.z * agentRot);
+        AddF(bv.x * agentRot);
 
         Vector3 landWorld = PredictLanding(ballRb);         // world coords
         Vector3 landRel = new Vector3(
@@ -315,9 +354,8 @@ public class VolleyballAgent : Agent
         landRel.y = 0;
 
         Vector3 landDir = landRel.sqrMagnitude > 1e-6f ? landRel.normalized : Vector3.zero;
-        sensor.AddObservation(landDir);                                      // 3 floats
-
-        sensor.AddObservation(Mathf.Clamp01(landRel.magnitude / maxDist)); // 1 float
+        AddV(landDir);                                      // 3 floats
+        AddF(Mathf.Clamp01(landRel.magnitude / maxDist));   // 1 float
 
         // 3.  TEAM-MATE INFO  (unchanged, your block here)
         if (teammate != null)
@@ -329,21 +367,21 @@ public class VolleyballAgent : Agent
             );
 
             Vector3 mateDir = toMate.sqrMagnitude > 1e-6f ? toMate.normalized : Vector3.zero;
-            sensor.AddObservation(mateDir); // 3
+            AddV(mateDir); // 3
 
             Vector3 mateVel = teammate.GetComponent<Rigidbody>().linearVelocity / 10f;
             // mirror x/z for symmetry
-            sensor.AddObservation(mateVel.y);
-            sensor.AddObservation(mateVel.z * agentRot);
-            sensor.AddObservation(mateVel.x * agentRot);
+            AddF(mateVel.y);
+            AddF(mateVel.z * agentRot);
+            AddF(mateVel.x * agentRot);
         }
         else
         {
             // pad if null (keeps obs size constant)
-            sensor.AddObservation(Vector3.zero); // dir
-            sensor.AddObservation(0f); // vy
-            sensor.AddObservation(0f); // vz
-            sensor.AddObservation(0f); // vx
+            AddV(Vector3.zero); // dir
+            AddF(0f); // vy
+            AddF(0f); // vz
+            AddF(0f); // vx
         }
 
         //----------------------------------------------------------------------
@@ -353,7 +391,7 @@ public class VolleyballAgent : Agent
         Vector3 agentLocal = transform.position - envOrigin;
         Vector3 netLocal = envController.net.transform.position - envOrigin;
         Vector3 blueGoal = envController.blueGoal.transform.position - envOrigin;   // z = -5
-        Vector3 redGoal = envController.redGoal.transform.position - envOrigin;   // z =  5
+        Vector3 redGoal = envController.redGoal.transform.position - envOrigin;     // z =  5
 
         Vector3 ownGoalLocal = (teamId == Team.Blue) ? blueGoal : redGoal;
         Vector3 opponentGoalLocal = (teamId == Team.Blue) ? redGoal : blueGoal;
@@ -368,8 +406,8 @@ public class VolleyballAgent : Agent
             );
             toTgt.y = 0;
             Vector3 dir = toTgt.sqrMagnitude > 1e-6f ? toTgt.normalized : Vector3.zero;
-            sensor.AddObservation(dir);                                     // 3 floats
-            sensor.AddObservation(Mathf.Clamp01(toTgt.magnitude / maxDist)); // 1 float
+            AddV(dir);                                     // 3 floats
+            AddF(Mathf.Clamp01(toTgt.magnitude / maxDist)); // 1 float
         }
 
         AddDirAndDist(netLocal);          // 4 floats
@@ -377,12 +415,12 @@ public class VolleyballAgent : Agent
         AddDirAndDist(opponentGoalLocal); // 4 floats
                                           //  >>> +12 floats total
 
-        sensor.AddObservation(role == Role.Passer ? 1f : 0f);
-        sensor.AddObservation(role == Role.Hitter ? 1f : 0f);
+        AddF(role == Role.Passer ? 1f : 0f);
+        AddF(role == Role.Hitter ? 1f : 0f);
 
         float lastTouchFlag = (envController.lastHitterAgent == this) ? 1f :
                        (envController.lastHitterAgent == teammate) ? -1f : 0f;
-        sensor.AddObservation(lastTouchFlag);
+        AddF(lastTouchFlag);
 
         //----------------------------------------------------------------------
         // 5.  TOUCHES & GROUNDED FLAG  (unchanged)
@@ -390,8 +428,33 @@ public class VolleyballAgent : Agent
         float touchesUsed = (teamId == Team.Blue)
                             ? envController.touchesBlue
                             : envController.touchesRed;
-        sensor.AddObservation(Mathf.Clamp01(touchesUsed / 3f));
-        sensor.AddObservation(CheckIfGrounded() ? 1f : 0f);
+        AddF(Mathf.Clamp01(touchesUsed / 3f));
+        AddF(CheckIfGrounded() ? 1f : 0f);
+
+        // --- compact debug line at the end (throttled) ---
+        if (LOG_OBS && (LOG_EVERY_N_STEPS <= 1 || StepCount % LOG_EVERY_N_STEPS == 0))
+        {
+            _sb.Append("[Team=").Append(teamId)
+               .Append(" Agent=").Append(gameObject.name)
+               .Append("] ");
+            _sb.Append("step=").Append(StepCount)
+               .Append(" n=").Append(_obs.Count)
+               .Append(" role=").Append(role)
+               .Append(" yawNorm=").Append(yawNorm.ToString("G4"))
+               .Append(" dirBall=(").Append(dirToBall.x.ToString("G4")).Append(",")
+                                    .Append(dirToBall.y.ToString("G4")).Append(",")
+                                    .Append(dirToBall.z.ToString("G4")).Append(")")
+               .Append(" distBallNorm=").Append(Mathf.Clamp01(toBall.magnitude / maxDist).ToString("G4"))
+               .Append(" grounded=").Append(CheckIfGrounded() ? "1" : "0")
+               .Append(" touchesUsed=").Append(touchesUsed);
+
+            // Full vector logging (optional)
+            _sb.Append(" obs=[");
+            for (int i = 0; i < _obs.Count; i++) { if (i > 0) _sb.Append(','); _sb.Append(_obs[i].ToString("G6")); }
+            _sb.Append(']');
+
+            UnityEngine.Debug.Log(_sb.ToString());
+        }
     }
 
     Vector3 PredictLanding(Rigidbody rb)
