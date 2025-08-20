@@ -107,7 +107,7 @@ public class EnvironmentController : MonoBehaviour
     // Simple one-line logger.  Toggle VERBOSE to silence everything
     // ------------------------------------------------------------
     #if UNITY_EDITOR
-    const bool VERBOSE = true;
+    const bool VERBOSE = false;
     #else
     const bool VERBOSE = false;
     #endif
@@ -192,9 +192,18 @@ public class EnvironmentController : MonoBehaviour
     private Vector3 GetSpawnPosition(Team team, int slot)
     {
         // slot: 0 = left (-2), 1 = right (+2)
-        float x = (slot == 0) ? -2f : 2f;
+        float x = 0;
         float y = 0.5f;
-        float z = (team == Team.Blue) ? -7f : 7f;
+        float z;
+        if (team == Team.Blue)
+        {
+            z = (slot == 0) ? -3f : -7f;
+        }
+        else if (team == Team.Red)
+        {
+            z = (slot == 0) ? 3f : 7f;
+        }
+        else z = 0f;
         return new Vector3(x, y, z);
     }
 
