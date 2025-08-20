@@ -38,7 +38,7 @@ behaviors:
     init_path: null
     keep_checkpoints: 5
     even_checkpoints: false
-    max_steps: 3000000
+    max_steps: 50000000
     time_horizon: 1000
     summary_freq: 20000
     threaded: false
@@ -69,7 +69,7 @@ checkpoint_settings:
   run_id: vball7rolerework
   initialize_from: null
   load_model: false
-  resume: false
+  resume: true
   force: false
   train_model: false
   inference: false

@@ -36,6 +36,10 @@ public class VolleyballAgent : Agent
     public Collider[] hitGroundColliders = new Collider[3];
     EnvironmentParameters resetParams;
 
+    private float lastDistToLanding = float.MaxValue;
+    private int lastTeamTouches = 0;
+    private Vector3 lastPosition;
+
     void Start()
     {
         envController = area.GetComponent<EnvironmentController>();
@@ -136,18 +140,18 @@ public class VolleyballAgent : Agent
             {
                 envController.RegisterTouch(this);
                 // after you confirm it's a *legal* touch
-                Vector3 courtFwd = (this.teamId == Team.Blue) ? Vector3.back : Vector3.forward;
-                float dirScore = Vector3.Dot(ballRb.linearVelocity.normalized, courtFwd);   // –1..1
-                float speedScore = Mathf.Clamp01(ballRb.linearVelocity.magnitude / 15f);      // 0..1
-                float height = Mathf.Clamp01(ballRb.position.y / 4f);               // 0..1
+                //Vector3 courtFwd = (this.teamId == Team.Blue) ? Vector3.back : Vector3.forward;
+                //float dirScore = Vector3.Dot(ballRb.linearVelocity.normalized, courtFwd);   // –1..1
+                //float speedScore = Mathf.Clamp01(ballRb.linearVelocity.magnitude / 15f);      // 0..1
+                //float height = Mathf.Clamp01(ballRb.position.y / 4f);               // 0..1
 
-                float touchReward = 0.4f * dirScore * speedScore * (1f - height);
-                AddReward(touchReward);   // = +0.04 for a low, fast, forward bump
+                //float touchReward = 0.4f * dirScore * speedScore * (1f - height);
+                //AddReward(touchReward);   // = +0.04 for a low, fast, forward bump
 
-                if (envController.lastHitterAgent != null && this != envController.lastHitterAgent && envController.lastHitterTeam == this.teamId && envController.lastHitterAgent.role == Role.Passer)
-                {
-                    envController.lastHitterAgent.AddReward(0.3f);
-                }
+                //if (envController.lastHitterAgent != null && this != envController.lastHitterAgent && envController.lastHitterTeam == this.teamId && envController.lastHitterAgent.role == Role.Passer)
+                //{
+                //    envController.lastHitterAgent.AddReward(0.3f);
+                //}
 
             }
             return;
@@ -271,6 +275,7 @@ public class VolleyballAgent : Agent
             AddReward(-0.0009f);   // tweak; feels like 16 timesteps = one lost touch bonus
         else
             AddReward(+0.0005f);   // tiny incentive for keeping ball over there
+
         if (role == Role.Hitter && teammate != null)
         {
             float dist = Vector3.Distance(transform.position, teammate.transform.position);
@@ -284,7 +289,43 @@ public class VolleyballAgent : Agent
             else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
         }
 
-            MoveAgent(actionBuffers.DiscreteActions);
+        // Predict ball landing (use same method as in your envController)
+        Vector3 predictedLanding = envController.PredictLanding(ballRb);
+        float currentDist = Vector3.Distance(transform.position, predictedLanding);
+
+        // Get current team touches
+        int touchesSoFar = (teamId == Team.Blue) ? envController.touchesBlue : envController.touchesRed;
+
+        // If new rally phase (touch count reset), reset distance tracker
+        if (touchesSoFar != lastTeamTouches)
+        {
+            lastDistToLanding = currentDist;
+            lastTeamTouches = touchesSoFar;
+        }
+
+        // Only the expected receiver (usually Passer with 0 touches, Hitter with 1, etc.) gets the reward for moving closer
+        bool isExpectedReceiver = false;
+        if (role == Role.Passer && touchesSoFar == 0) isExpectedReceiver = true;
+        if (role == Role.Hitter && touchesSoFar == 1) isExpectedReceiver = true;
+
+        // Reward for moving toward predicted landing
+        if (isExpectedReceiver)
+        {
+            float delta = lastDistToLanding - currentDist;
+            if (delta > 0.01f)  // moved closer
+                AddReward(0.001f * delta); // reward proportional to progress
+            lastDistToLanding = currentDist;
+
+            // Idle penalty: if moving < 0.1 m/s and close to landing
+            float speed = (transform.position - lastPosition).magnitude / Time.fixedDeltaTime;
+            if (currentDist < 2.0f && speed < 0.1f)
+                AddReward(-0.001f); // penalize for standing still when needed
+        }
+
+        // Track position for next step's idle check
+        lastPosition = transform.position;
+
+        MoveAgent(actionBuffers.DiscreteActions);
     }
 
     public override void CollectObservations(VectorSensor sensor)

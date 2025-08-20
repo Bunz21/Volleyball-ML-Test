@@ -2,22 +2,58 @@
     "VolleyballAgent": {
         "checkpoints": [
             {
-                "steps": 4440,
-                "file_path": "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-4440.onnx",
-                "reward": 0.1821666259657253,
-                "creation_time": 1755681637.002517,
+                "steps": 48499986,
+                "file_path": "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-48499986.onnx",
+                "reward": 0.10809652743401466,
+                "creation_time": 1755721820.9999933,
                 "auxillary_file_paths": [
-                    "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-4440.pt"
+                    "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-48499986.pt"
+                ]
+            },
+            {
+                "steps": 48999704,
+                "file_path": "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-48999704.onnx",
+                "reward": 0.4752358649857342,
+                "creation_time": 1755722226.0506716,
+                "auxillary_file_paths": [
+                    "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-48999704.pt"
+                ]
+            },
+            {
+                "steps": 49499988,
+                "file_path": "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-49499988.onnx",
+                "reward": 0.1697708075972879,
+                "creation_time": 1755722638.56831,
+                "auxillary_file_paths": [
+                    "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-49499988.pt"
+                ]
+            },
+            {
+                "steps": 49999578,
+                "file_path": "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-49999578.onnx",
+                "reward": 0.42418604650918174,
+                "creation_time": 1755723049.6313438,
+                "auxillary_file_paths": [
+                    "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-49999578.pt"
+                ]
+            },
+            {
+                "steps": 50017578,
+                "file_path": "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-50017578.onnx",
+                "reward": 0.9231825095911821,
+                "creation_time": 1755723050.5538163,
+                "auxillary_file_paths": [
+                    "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-50017578.pt"
                 ]
             }
         ],
         "final_checkpoint": {
-            "steps": 4440,
+            "steps": 50017578,
             "file_path": "results\\vball7rolerework\\VolleyballAgent.onnx",
-            "reward": 0.1821666259657253,
-            "creation_time": 1755681637.002517,
+            "reward": 0.9231825095911821,
+            "creation_time": 1755723050.5538163,
             "auxillary_file_paths": [
-                "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-4440.pt"
+                "results\\vball7rolerework\\VolleyballAgent\\VolleyballAgent-50017578.pt"
             ]
         }
     },

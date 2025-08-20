@@ -1,0 +1,29 @@
+{
+    "VolleyballAgent": {
+        "checkpoints": [
+            {
+                "steps": 39766,
+                "file_path": "results\\vball8test\\VolleyballAgent\\VolleyballAgent-39766.onnx",
+                "reward": 6.792062743900247e+33,
+                "creation_time": 1755730555.7290804,
+                "auxillary_file_paths": [
+                    "results\\vball8test\\VolleyballAgent\\VolleyballAgent-39766.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 39766,
+            "file_path": "results\\vball8test\\VolleyballAgent.onnx",
+            "reward": 6.792062743900247e+33,
+            "creation_time": 1755730555.7290804,
+            "auxillary_file_paths": [
+                "results\\vball8test\\VolleyballAgent\\VolleyballAgent-39766.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}
