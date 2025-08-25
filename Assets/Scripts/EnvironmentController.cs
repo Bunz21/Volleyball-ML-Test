@@ -557,7 +557,7 @@ public class EnvironmentController : MonoBehaviour
                         //    // Penalize for 1- or 2-touch overs as before
                         //    if (touchesSoFar < 3)
                         //    {
-                        //        lastHitterAgent.AddReward(-0.2f);
+                        //        lastHitterAgent.AddReward(-0.2f); DELETE
                         //    }
                         //}
                         D("PassOverNet – flag set true");
