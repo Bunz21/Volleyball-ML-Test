@@ -1169,7 +1169,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 1f857cb21cf0d8c40bfd420de249e210, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -1770,7 +1770,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 1f857cb21cf0d8c40bfd420de249e210, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -3541,7 +3541,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 1f857cb21cf0d8c40bfd420de249e210, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -4841,6 +4841,7 @@ MonoBehaviour:
   touchCooldown: 0.1
   assistRewardSetter: 0.03
   assistRewardSpiker: 0.04
+  maxStepsBeforeDrop: 150
   ball: {fileID: 3305385571356851491}
   ballRb: {fileID: 3970031669195569061}
   ballCol: {fileID: 5564502837026052100}
@@ -5553,7 +5554,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 1f857cb21cf0d8c40bfd420de249e210, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -6837,7 +6838,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7e27fe373ccd633408a18b18b4b213f4, type: 2}
+  - {fileID: 2100000, guid: e410534d146432945ab2f20f97ae38c6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7032,7 +7033,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7e27fe373ccd633408a18b18b4b213f4, type: 2}
+  - {fileID: 2100000, guid: e410534d146432945ab2f20f97ae38c6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

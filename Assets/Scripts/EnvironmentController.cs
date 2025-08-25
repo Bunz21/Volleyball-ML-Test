@@ -33,6 +33,7 @@ public class EnvironmentController : MonoBehaviour
     [SerializeField] private float touchCooldown = 0.20f;   // s
     [SerializeField] private float assistRewardSetter = 0.5f;  // earlier touch
     [SerializeField] private float assistRewardSpiker = 0.5f;  // current touch
+    [SerializeField] private int maxStepsBeforeDrop = 150;  // Steps before drop, ~3 sec if FixedUpdate is 0.02
 
     //– Scene references ------------------------------------------------
     [SerializeField] private GameObject ball;
@@ -169,18 +170,42 @@ public class EnvironmentController : MonoBehaviour
         resetTimer++;
         if (MaxEnvironmentSteps > 0 && resetTimer >= MaxEnvironmentSteps)
         {
-            if (!serveTouched)        // no one ever hit the ball
-            {
-                const float idlePenalty = -0.4f;   // tune magnitude
-                blueAgent.AddReward(idlePenalty);
-                redAgent.AddReward(idlePenalty);
-            }
+            //if (!serveTouched)        // no one ever hit the ball
+            //{
+            //    const float idlePenalty = -0.4f;   // tune magnitude
+            //    blueAgent.AddReward(idlePenalty);
+            //    redAgent.AddReward(idlePenalty);
+            //}
 
             D($"TIMEOUT – {MaxEnvironmentSteps} steps reached");
             blueAgent.EpisodeInterrupted();
             redAgent.EpisodeInterrupted();
             ResetScene();
         }
+
+        // Only increment if ball is not frozen and serve has been touched
+        if (isBallFrozen && !serveTouched)
+        {
+            if (resetTimer >= maxStepsBeforeDrop)
+            {
+                DropBall();
+            }
+        }
+    }
+
+    private void DropBall()
+    {
+        D(">>> DropBall CALLED! Unfreezing and enabling gravity.");
+        isBallFrozen = false;
+        if (ballCol != null) ballCol.isTrigger = false;
+        if (ballRb != null)
+        {
+            ballRb.isKinematic = false;
+            ballRb.useGravity = true;
+            ballRb.linearVelocity = new Vector3(0f, -5f, 0f);   // Drop fast. Tune as needed.
+            ballRb.angularVelocity = Vector3.zero;
+        }
+        Physics.SyncTransforms();
     }
 
     private Vector3 GetSpawnPosition(Team team, int slot)
@@ -446,24 +471,26 @@ public class EnvironmentController : MonoBehaviour
     private void AwardRegularPoint(Team scorer)
     {
         // small velocity-shaping bonus
-        float bonus = 0f;
-        if (ballRb != null)
-        {
-            Vector3 v = ballRb.linearVelocity;
+        //float bonus = 0f;
+        //if (ballRb != null)
+        //{
+        //    Vector3 v = ballRb.linearVelocity;
 
-            // +Z faces Red side, -Z faces Blue side
-            float forward = (scorer == Team.Blue) ? Mathf.Max(0f, v.z)
-                                                  : Mathf.Max(0f, -v.z);
-            float down = Mathf.Max(0f, -v.y);
+        //    // +Z faces Red side, -Z faces Blue side
+        //    float forward = (scorer == Team.Blue) ? Mathf.Max(0f, v.z)
+        //                                          : Mathf.Max(0f, -v.z);
+        //    float down = Mathf.Max(0f, -v.y);
 
-            bonus = velocityRewardForwardWeight * forward +
-                    velocityRewardDownWeight * down;
+        //    bonus = velocityRewardForwardWeight * forward +
+        //            velocityRewardDownWeight * down;
 
-            bonus = Mathf.Min(bonus, velocityRewardMax);
-        }
+        //    bonus = Mathf.Min(bonus, velocityRewardMax);
+        //}
 
-        D($"Regular point for {scorer}  bonus={bonus:F2}");
-        EndRally(scorer, bonus);
+        //D($"Regular point for {scorer}  bonus={bonus:F2}");
+        //EndRally(scorer, bonus);
+
+        EndRally(scorer);
     }
 
     /*------------------------------------------------------------
@@ -517,24 +544,22 @@ public class EnvironmentController : MonoBehaviour
                         UpdateRoles();
 
                         if (lastHitterAgent != null)
-                        {
-                            if (lastHitterTeam == Team.Blue && touchesBlue < 3 && touchesBlue > 1)
-                                lastHitterAgent.AddReward(-0.2f);
-                            if (lastHitterTeam == Team.Red && touchesRed < 3 && touchesRed > 1)
-                                lastHitterAgent.AddReward(-0.2f);
+                            lastHitterAgent.AddReward(0.01f);
 
-                            int touchesSoFar = (lastHitterAgent.teamId == Team.Blue) ? touchesBlue : touchesRed;
+                        //if (lastHitterAgent != null)
+                        //{
+                        //    int touchesSoFar = (lastHitterAgent.teamId == Team.Blue) ? touchesBlue : touchesRed;
 
-                            if (touchesSoFar == 3 && lastHitterAgent.role == Role.Hitter)
-                            {
-                                lastHitterAgent.AddReward(assistRewardSpiker); // Only after correct sequence
-                            }
-                            // Penalize for 1- or 2-touch overs as before
-                            if (touchesSoFar < 3)
-                            {
-                                lastHitterAgent.AddReward(-0.2f);
-                            }
-                        }
+                        //    if (touchesSoFar == 3 && lastHitterAgent.role == Role.Hitter)
+                        //    {
+                        //        lastHitterAgent.AddReward(assistRewardSpiker); // Only after correct sequence
+                        //    }
+                        //    // Penalize for 1- or 2-touch overs as before
+                        //    if (touchesSoFar < 3)
+                        //    {
+                        //        lastHitterAgent.AddReward(-0.2f);
+                        //    }
+                        //}
                         D("PassOverNet – flag set true");
                     }
                     break;
@@ -609,26 +634,16 @@ public class EnvironmentController : MonoBehaviour
         int touchesSoFar = (agent.teamId == Team.Blue) ? touchesBlue : touchesRed;
         D($"RegisterTouch by {agent.teamId}  TB/TR={touchesBlue}/{touchesRed}");
 
-        if (touchesSoFar == 1)
+        if (lastHitterAgent != null)
         {
-            if (agent.role == Role.Hitter || agent.role == Role.Passer)
+            switch (touchesSoFar)
             {
-                agent.AddReward(assistRewardSetter); // Reward for successful receive
-            }
-        }
-        else if (touchesSoFar == 2)
-        {
-            if (agent.role == Role.Passer)
-            {
-                agent.AddReward(assistRewardSetter); // Reward for good pass
-            }
-        }
-        else if (touchesSoFar == 3)
-        {
-            // Reward setter if previous touch was from teammate
-            if (lastHitterAgent != null && lastHitterAgent != agent && lastHitterAgent.teamId == agent.teamId && lastHitterAgent.role == Role.Passer)
-            {
-                lastHitterAgent.AddReward(assistRewardSetter); // Passer gets reward for set
+                case 2:
+                    lastHitterAgent.AddReward(0.06f);
+                    break;
+                case 3:
+                    lastHitterAgent.AddReward(0.07f);
+                    break;
             }
         }
 
