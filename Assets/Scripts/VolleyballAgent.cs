@@ -143,7 +143,7 @@ public class VolleyballAgent : Agent
                 //float touchReward = 0.05f * dirScore * speedScore;
                 //AddReward(touchReward);
 
-                AddReward(0.05f);
+                AddReward(0.005f);
             }
             return;
         }
@@ -178,7 +178,7 @@ public class VolleyballAgent : Agent
     /// </summary>
     public void Jump()
     {
-        AddReward(-0.000025f);
+        AddReward(-0.0005f);
         jumpingTime = 0.2f;
         jumpStartingPos = agentRb.position;
     }
@@ -258,19 +258,25 @@ public class VolleyballAgent : Agent
         if (!grounded)
             AddReward(-airPenaltyPerStep);
 
-        AddReward(-0.00005f);
+        AddReward(-0.0005f);
 
-        if (role == Role.Hitter && teammate != null)
+        //if (role == Role.Hitter && teammate != null)
+        //{
+        //    float dist = Vector3.Distance(transform.position, teammate.transform.position);
+        //    if (dist < 0.8f) AddReward(-0.0001f);   // crowding
+        //    else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
+        //}
+        //else if (role == Role.Passer && teammate != null)
+        //{
+        //    float dist = Vector3.Distance(transform.position, envController.net.transform.position);
+        //    if (dist < 0.8f) AddReward(-0.0001f);   // crowding
+        //    else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
+        //}
+
+        if (teammate != null)
         {
             float dist = Vector3.Distance(transform.position, teammate.transform.position);
-            if (dist < 0.8f) AddReward(-0.0001f);   // crowding
-            else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
-        }
-        else if (role == Role.Passer && teammate != null)
-        {
-            float dist = Vector3.Distance(transform.position, envController.net.transform.position);
-            if (dist < 0.8f) AddReward(-0.0001f);   // crowding
-            else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
+            if (dist < 0.5f) AddReward(-0.0005f);   // crowding
         }
 
         MoveAgent(actionBuffers.DiscreteActions);

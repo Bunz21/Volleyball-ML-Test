@@ -31,8 +31,8 @@ public class EnvironmentController : MonoBehaviour
     [SerializeField] private float velocityRewardDownWeight = 0.04f;
     [SerializeField] private float velocityRewardMax = 0.40f;
     [SerializeField] private float touchCooldown = 0.20f;   // s
-    [SerializeField] private float assistRewardSetter = 0.5f;  // earlier touch
-    [SerializeField] private float assistRewardSpiker = 0.5f;  // current touch
+    //[SerializeField] private float assistRewardSetter = 0.5f;  // earlier touch
+    //[SerializeField] private float assistRewardSpiker = 0.5f;  // current touch
     [SerializeField] private int maxStepsBeforeDrop = 150;  // Steps before drop, ~3 sec if FixedUpdate is 0.02
 
     //– Scene references ------------------------------------------------
@@ -503,24 +503,51 @@ public class EnvironmentController : MonoBehaviour
         {
             case Event.HitRedGoal:
                 {
-                    if (lastHitterTeam == Team.Blue)        // legal attack
+                    if (lastHitterTeam == Team.Blue)
+                    {
+                        // Legal attack
                         AwardRegularPoint(Team.Blue);
-                    else                                     // self-goal
+                    }
+                    else
+                    {
+                        // Self-goal
+                        //if (lastHitterAgent != null && ballPassedOverNet)
+                        //{
+                        //    lastHitterAgent.AddReward(-0.5f);
+                        //}
                         AwardFaultAgainst(Team.Red);
+                    }
                     break;
                 }
 
             case Event.HitBlueGoal:
                 {
                     if (lastHitterTeam == Team.Red)
+                    {
                         AwardRegularPoint(Team.Red);
+                    }
                     else
+                    {
+                        //if (lastHitterAgent != null && ballPassedOverNet)
+                        //{
+                        //    lastHitterAgent.AddReward(-0.5f);
+                        //}
                         AwardFaultAgainst(Team.Blue);
+                    }
                     break;
                 }
-            case Event.HitOutOfBounds:        // went outside court limits
-                AwardFaultAgainst(lastHitter == Team.Default ? nextServer : lastHitter);
-                break;
+
+            case Event.HitOutOfBounds:
+                {
+                    //if (lastHitterAgent != null)
+                    //{
+                    //    lastHitterAgent.AddReward(-0.05f);
+                    //}
+                    // Default to nextServer if lastHitter is not set
+                    Team faultTeam = lastHitter == Team.Default ? nextServer : lastHitter;
+                    AwardFaultAgainst(faultTeam);
+                    break;
+                }
 
             case Event.PassOverNet:
                 {
@@ -528,11 +555,11 @@ public class EnvironmentController : MonoBehaviour
                     bool ballNowOnRedSide = ball.transform.position.z > 0f;
                     bool ballNowOnBlueSide = ball.transform.position.z < 0f;
 
-                    Team hitter = lastHitterTeam;                 // who struck last
+                    Team hitter = lastHitterTeam; // who struck last
                     if ((hitter == Team.Blue && !ballNowOnRedSide) ||
                         (hitter == Team.Red && !ballNowOnBlueSide))
                     {
-                        // crossed the trigger but bounced back – ignore
+                        // Crossed the trigger but bounced back – ignore
                         break;
                     }
 
@@ -540,26 +567,25 @@ public class EnvironmentController : MonoBehaviour
                     if (!ballPassedOverNet)
                     {
                         ballPassedOverNet = true;
-
                         UpdateRoles();
 
                         if (lastHitterAgent != null)
-                            lastHitterAgent.AddReward(0.01f);
+                        {
+                            lastHitterAgent.AddReward(0.3f);
+                        }
 
-                        //if (lastHitterAgent != null)
-                        //{
-                        //    int touchesSoFar = (lastHitterAgent.teamId == Team.Blue) ? touchesBlue : touchesRed;
-
-                        //    if (touchesSoFar == 3 && lastHitterAgent.role == Role.Hitter)
-                        //    {
-                        //        lastHitterAgent.AddReward(assistRewardSpiker); // Only after correct sequence
-                        //    }
-                        //    // Penalize for 1- or 2-touch overs as before
-                        //    if (touchesSoFar < 3)
-                        //    {
-                        //        lastHitterAgent.AddReward(-0.2f);
-                        //    }
-                        //}
+                        // Uncomment and adjust if you want to further shape the reward for spikes/sets
+                        /*
+                        int touchesSoFar = (lastHitterAgent.teamId == Team.Blue) ? touchesBlue : touchesRed;
+                        if (touchesSoFar == 3 && lastHitterAgent.role == Role.Hitter)
+                        {
+                            lastHitterAgent.AddReward(assistRewardSpiker);
+                        }
+                        if (touchesSoFar < 3)
+                        {
+                            lastHitterAgent.AddReward(-0.2f);
+                        }
+                        */
                         D("PassOverNet – flag set true");
                     }
                     break;
@@ -634,18 +660,17 @@ public class EnvironmentController : MonoBehaviour
         int touchesSoFar = (agent.teamId == Team.Blue) ? touchesBlue : touchesRed;
         D($"RegisterTouch by {agent.teamId}  TB/TR={touchesBlue}/{touchesRed}");
 
-        if (lastHitterAgent != null)
-        {
-            switch (touchesSoFar)
-            {
-                case 2:
-                    lastHitterAgent.AddReward(0.06f);
-                    break;
-                case 3:
-                    lastHitterAgent.AddReward(0.07f);
-                    break;
-            }
-        }
+        //Vector3 forward = (agent.teamId == Team.Blue) ? Vector3.forward : Vector3.back;
+        //Vector3 ballVel = ballRb.linearVelocity;
+        //if (ballVel.magnitude > 0.1f) // Ignore near-zero (taps)
+        //{
+        //    float dirScore = Vector3.Dot(ballVel.normalized, forward); // -1 to +1
+        //    if (dirScore < -0.5f)
+        //        lastHitterAgent.AddReward(dirScore * 0.1f); // Strong penalty for wild back hits
+        //    else if (dirScore > 0.1f)
+        //        lastHitterAgent.AddReward(dirScore * 0.07f); // Reward for forward or slightly forward
+        //                                                     // Do nothing for -0.5f < dirScore < 0.1f (sideways or gentle back)
+        //}
 
         /*------------------------------------------------------------------
          * 4)  FOUR-TOUCH fault on a side
@@ -688,7 +713,7 @@ public class EnvironmentController : MonoBehaviour
         ballRb.angularVelocity = Vector3.zero;
 
         /* --- tiny incentive for the server to start the rally ----------------- */
-        if (toucher != null) toucher.AddReward(0.1f);
+        if (toucher != null) toucher.AddReward(0.005f);
 
         Physics.SyncTransforms();           // make PhysX pick up the changes NOW
     }
