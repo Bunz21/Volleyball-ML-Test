@@ -161,20 +161,23 @@ public class VolleyballAgent : Agent
 
             if (isSpiking)
             {
-                float spikePower = volleyballSettings.spikePower;
-                Vector3 spikeDir = transform.forward.normalized;
+                if (isSpiking)
+                {
+                    float spikePower = volleyballSettings.spikePower;
+                    Vector3 spikeDir = transform.forward.normalized;
 
-                // Remove all vertical velocity (set Y to zero)
-                Vector3 ballVel = ballRb.linearVelocity;
-                ballVel.y = 0f;
-                ballRb.linearVelocity = ballVel;
+                    Debug.Log($"spikeDir: {spikeDir}, spikePower: {spikePower}, result: {spikeDir * spikePower}");
 
-                // Now add spike in horizontal direction
-                Vector3 spikeForce = spikeDir * spikePower;
-                ballRb.AddForce(spikeForce, ForceMode.VelocityChange);
+                    // Combine spike direction and power, set slight downward arc
+                    Vector3 spikeVelocity = spikeDir * spikePower;
+                    spikeVelocity.y = -0.1f * spikePower; // or just 0 if you want laser flat
 
-                isSpiking = false;
-                spikeTimer = 0f;
+                    ballRb.linearVelocity = spikeVelocity;
+
+                    isSpiking = false;
+                    spikeTimer = 0f;
+                }
+
             }
 
         }
@@ -198,33 +201,6 @@ public class VolleyballAgent : Agent
             teammate != null && c.collider.gameObject == teammate.gameObject)
         {
             AddReward(-0.03f * 0.2f); // small drain each physics step
-        }
-
-        if (c.collider.CompareTag("ball"))
-        {
-            if (isSpiking)
-            {
-                float spikePower = volleyballSettings.spikePower;
-                Vector3 spikeDir = transform.forward.normalized;
-
-                // Remove all vertical velocity (set Y to zero)
-                Vector3 ballVel = ballRb.linearVelocity;
-                ballVel.y = 0f;
-                ballRb.linearVelocity = ballVel;
-
-                // Now add spike in horizontal direction
-                Vector3 spikeForce = spikeDir * spikePower;
-                ballRb.AddForce(spikeForce, ForceMode.VelocityChange);
-
-                isSpiking = false;
-                spikeTimer = 0f;
-            }
-
-            if (envController != null)
-            {
-                envController.RegisterTouch(this);
-                AddReward(0.005f);
-            }
         }
     }
 

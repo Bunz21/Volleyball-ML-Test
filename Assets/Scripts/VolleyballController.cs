@@ -10,6 +10,9 @@ public class VolleyballController : MonoBehaviour
     Collider redFloorCollider;
     Collider blueFloorCollider;
 
+    public GameObject ballMarker;
+    [SerializeField] private float markerY = 0.0125f; // y-position to lock the marker (adjust as you wish)
+
     void Start()
     {
         envController = GetComponentInParent<EnvironmentController>();
@@ -56,6 +59,16 @@ public class VolleyballController : MonoBehaviour
         {
             envController.ResolveEvent(Event.PassOverNet);
             envController.D("COLLIDE OVER NET");
+        }
+    }
+
+    void Update()
+    {
+        if (ballMarker != null)
+        {
+            Vector3 pos = transform.position;
+            pos.y = markerY; // keep marker at a fixed Y
+            ballMarker.transform.position = pos;
         }
     }
 }

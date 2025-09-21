@@ -31,8 +31,6 @@ public class EnvironmentController : MonoBehaviour
     [SerializeField] private float velocityRewardDownWeight = 0.04f;
     [SerializeField] private float velocityRewardMax = 0.40f;
     [SerializeField] private float touchCooldown = 0.75f;   // s
-    //[SerializeField] private float assistRewardSetter = 0.5f;  // earlier touch
-    //[SerializeField] private float assistRewardSpiker = 0.5f;  // current touch
     [SerializeField] private int maxStepsBeforeDrop = 150;  // Steps before drop, ~3 sec if FixedUpdate is 0.02
 
     //– Scene references ------------------------------------------------
@@ -210,19 +208,20 @@ public class EnvironmentController : MonoBehaviour
 
     private Vector3 GetSpawnPosition(Team team, int slot)
     {
-        // slot: 0 = left (-2), 1 = right (+2)
-        float x = 0;
+        // slot: 0 = left (-3), 1 = right (+3)
+        float x = (slot == 0) ? -3f : 3f;
         float y = 0.5f;
-        float z;
+        float z = 0f;
         if (team == Team.Blue)
         {
-            z = (slot == 0) ? -3f : -7f;
+            z = -7f;
         }
         else if (team == Team.Red)
         {
-            z = (slot == 0) ? 3f : 7f;
+            z = 7f;
         }
         else z = 0f;
+
         return new Vector3(x, y, z);
     }
 
@@ -380,8 +379,9 @@ public class EnvironmentController : MonoBehaviour
             ballSpawnSide = (nextServer == Team.Blue) ? -1 : 1;
         }
 
+        float xLocal = Random.Range(-2f, 2f); // Random X between -2 and +2
         float zLocal = (ballSpawnSide == -1) ? -4f : 4f;   // -Z blue, +Z red
-        Vector3 localBallPos = new Vector3(0f, 2.75f, zLocal);
+        Vector3 localBallPos = new Vector3(xLocal, 2.75f, zLocal);
 
         // --- convert to world space ------------------------------
         ball.transform.position = transform.TransformPoint(localBallPos);
