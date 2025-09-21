@@ -30,7 +30,7 @@ public class EnvironmentController : MonoBehaviour
     [SerializeField] private float velocityRewardForwardWeight = 0.03f;
     [SerializeField] private float velocityRewardDownWeight = 0.04f;
     [SerializeField] private float velocityRewardMax = 0.40f;
-    [SerializeField] private float touchCooldown = 0.20f;   // s
+    [SerializeField] private float touchCooldown = 0.75f;   // s
     //[SerializeField] private float assistRewardSetter = 0.5f;  // earlier touch
     //[SerializeField] private float assistRewardSpiker = 0.5f;  // current touch
     [SerializeField] private int maxStepsBeforeDrop = 150;  // Steps before drop, ~3 sec if FixedUpdate is 0.02
@@ -381,7 +381,7 @@ public class EnvironmentController : MonoBehaviour
         }
 
         float zLocal = (ballSpawnSide == -1) ? -4f : 4f;   // -Z blue, +Z red
-        Vector3 localBallPos = new Vector3(0f, 2.5f, zLocal);
+        Vector3 localBallPos = new Vector3(0f, 2.75f, zLocal);
 
         // --- convert to world space ------------------------------
         ball.transform.position = transform.TransformPoint(localBallPos);

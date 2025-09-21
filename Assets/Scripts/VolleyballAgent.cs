@@ -14,31 +14,46 @@ public enum Role
 
 public class VolleyballAgent : Agent
 {
+    // --- UNITY/ML-AGENTS FIELDS ---
     [SerializeField] private GameObject area;
-    [SerializeField] private VolleyballAgent teammate; // assign in Inspector, or find at runtime
-    Rigidbody agentRb;
-    BehaviorParameters behaviorParameters;
-    public Team teamId;
+    [SerializeField] private VolleyballAgent teammate; // Assign in Inspector, or find at runtime
+    [SerializeField] private VolleyballSettings volleyballSettings; // Allow Inspector hookup
+    [HideInInspector] public EnvironmentController envController;   // Already there? Keep it.
     [HideInInspector] public Role role = Role.Generic;
+    public Team teamId;
 
-    // To get ball's location for observations
-    public GameObject ball;
-    Rigidbody ballRb;
-    [SerializeField] private VolleyballSettings volleyballSettings; // allow Inspector hookup
-    [HideInInspector] public EnvironmentController envController;   // <-- already there? keep it.
+    // --- COMPONENT REFERENCES ---
+    private Rigidbody agentRb;
+    private Renderer agentRenderer;
+    private Color defaultColor;
+    private static readonly Color spikeColor = new Color(0.5f, 0f, 0.5f); // purple (R,G,B)
+    private BehaviorParameters behaviorParameters;
+    private EnvironmentParameters resetParams;
 
-    // Controls jump behavior
-    float jumpingTime;
-    Vector3 jumpTargetPos;
-    Vector3 jumpStartingPos;
-    float agentRot;
+    // --- BALL REFERENCES ---
+    public GameObject ball;   // To get ball's location for observations
+    private Rigidbody ballRb;
 
+    // --- GROUND COLLIDERS ---
     public Collider[] hitGroundColliders = new Collider[3];
-    EnvironmentParameters resetParams;
+
+    // --- JUMP/SPIKE CONTROLS ---
+    private float jumpingTime;
+    private Vector3 jumpTargetPos;
+    private Vector3 jumpStartingPos;
+    private float agentRot;
+    private bool canSpike = false;
+    private bool isSpiking = false;
+    private float spikeTimer = 0f;
+    [SerializeField] private float spikeWindow = 0.5f;
 
     void Start()
     {
         envController = area.GetComponent<EnvironmentController>();
+
+        agentRenderer = GetComponentInChildren<Renderer>(); // or your mesh renderer location
+        if (agentRenderer != null)
+            defaultColor = agentRenderer.material.color;
     }
 
     new void Awake()
@@ -63,6 +78,9 @@ public class VolleyballAgent : Agent
         agentRb = GetComponent<Rigidbody>();
         ballRb = ball.GetComponent<Rigidbody>();
 
+        if (agentRenderer != null)
+            agentRenderer.material.color = defaultColor;
+
         // for symmetry between player side
         if (teamId == Team.Blue)
         {
@@ -74,6 +92,9 @@ public class VolleyballAgent : Agent
         }
 
         resetParams = Academy.Instance.EnvironmentParameters;
+        isSpiking = false;
+        spikeTimer = 0f;
+        canSpike = false;
     }
 
     /// <summary>
@@ -135,17 +156,27 @@ public class VolleyballAgent : Agent
             if (envController != null)
             {
                 envController.RegisterTouch(this);
-                // after you confirm it's a *legal* touch
-                //Vector3 courtFwd = (this.teamId == Team.Blue) ? Vector3.back : Vector3.forward;
-                //float dirScore = Vector3.Dot(ballRb.linearVelocity.normalized, courtFwd);   // –1..1
-                //float speedScore = Mathf.Clamp01(ballRb.linearVelocity.magnitude / 15f);      // 0..1
-
-                //float touchReward = 0.05f * dirScore * speedScore;
-                //AddReward(touchReward);
-
                 AddReward(0.005f);
             }
-            return;
+
+            if (isSpiking)
+            {
+                float spikePower = volleyballSettings.spikePower;
+                Vector3 spikeDir = transform.forward.normalized;
+
+                // Remove all vertical velocity (set Y to zero)
+                Vector3 ballVel = ballRb.linearVelocity;
+                ballVel.y = 0f;
+                ballRb.linearVelocity = ballVel;
+
+                // Now add spike in horizontal direction
+                Vector3 spikeForce = spikeDir * spikePower;
+                ballRb.AddForce(spikeForce, ForceMode.VelocityChange);
+
+                isSpiking = false;
+                spikeTimer = 0f;
+            }
+
         }
 
         //  ---   TEAM-MATE BUMP   ----------------------------------------------
@@ -168,6 +199,33 @@ public class VolleyballAgent : Agent
         {
             AddReward(-0.03f * 0.2f); // small drain each physics step
         }
+
+        if (c.collider.CompareTag("ball"))
+        {
+            if (isSpiking)
+            {
+                float spikePower = volleyballSettings.spikePower;
+                Vector3 spikeDir = transform.forward.normalized;
+
+                // Remove all vertical velocity (set Y to zero)
+                Vector3 ballVel = ballRb.linearVelocity;
+                ballVel.y = 0f;
+                ballRb.linearVelocity = ballVel;
+
+                // Now add spike in horizontal direction
+                Vector3 spikeForce = spikeDir * spikePower;
+                ballRb.AddForce(spikeForce, ForceMode.VelocityChange);
+
+                isSpiking = false;
+                spikeTimer = 0f;
+            }
+
+            if (envController != null)
+            {
+                envController.RegisterTouch(this);
+                AddReward(0.005f);
+            }
+        }
     }
 
 
@@ -176,11 +234,13 @@ public class VolleyballAgent : Agent
     /// <summary>
     /// Starts the jump sequence
     /// </summary>
-    public void Jump()
+    public void Jump(bool isSpikeJump)
     {
         AddReward(-0.0005f);
-        jumpingTime = 0.2f;
+        jumpingTime = isSpikeJump ? 0.26f : 0.2f; // Higher/faster jump for spike
         jumpStartingPos = agentRb.position;
+        canSpike = isSpikeJump;
+        isSpiking = isSpikeJump;   // Set spiking mode if spike jump
     }
 
     /// <summary>
@@ -217,11 +277,15 @@ public class VolleyballAgent : Agent
         else if (dirToGoSideAction == 2)
             dirToGo = (grounded ? 1f : 0.5f) * transform.right * volleyballSettings.speedReductionFactor;
 
-        if (jumpAction == 1)
-            if (((jumpingTime <= 0f) && grounded))
-            {
-                Jump();
-            }
+        var jumpType = act[3];
+        // 0 = no jump, 1 = normal, 2 = spike jump
+
+        if ((jumpType == 1 || jumpType == 2) && jumpingTime <= 0f && grounded)
+        {
+            bool isSpikeJump = (jumpType == 2);
+            Jump(isSpikeJump);
+        }
+
 
         transform.Rotate(rotateDir, Time.fixedDeltaTime * 200f);
         agentRb.AddForce(dirToGo * volleyballSettings.agentRunSpeed,
@@ -240,13 +304,19 @@ public class VolleyballAgent : Agent
 
         if (!(jumpingTime > 0f) && !grounded)
         {
-            agentRb.AddForce(
-                Vector3.down * volleyballSettings.fallingForce, ForceMode.Acceleration);
+            agentRb.AddForce(Vector3.down * volleyballSettings.fallingForce, ForceMode.Acceleration);
         }
 
         if (jumpingTime > 0f)
         {
             jumpingTime -= Time.fixedDeltaTime;
+        }
+
+        if (!grounded && jumpAction == 2 && canSpike)
+        {
+            isSpiking = true;
+            spikeTimer = spikeWindow;
+            canSpike = false;  // Disable until next jump
         }
     }
 
@@ -260,23 +330,24 @@ public class VolleyballAgent : Agent
 
         AddReward(-0.0005f);
 
-        //if (role == Role.Hitter && teammate != null)
-        //{
-        //    float dist = Vector3.Distance(transform.position, teammate.transform.position);
-        //    if (dist < 0.8f) AddReward(-0.0001f);   // crowding
-        //    else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
-        //}
-        //else if (role == Role.Passer && teammate != null)
-        //{
-        //    float dist = Vector3.Distance(transform.position, envController.net.transform.position);
-        //    if (dist < 0.8f) AddReward(-0.0001f);   // crowding
-        //    else if (dist > 1.2f) AddReward(+0.0002f);   // good spacing
-        //}
-
         if (teammate != null)
         {
             float dist = Vector3.Distance(transform.position, teammate.transform.position);
             if (dist < 0.5f) AddReward(-0.0005f);   // crowding
+        }
+
+        if (isSpiking)
+        {
+            spikeTimer -= Time.fixedDeltaTime;
+            if (spikeTimer <= 0f)
+            {
+                isSpiking = false;
+            }
+        }
+
+        if (agentRenderer != null)
+        {
+            agentRenderer.material.color = isSpiking ? spikeColor : defaultColor;
         }
 
         MoveAgent(actionBuffers.DiscreteActions);
@@ -487,7 +558,8 @@ public class VolleyballAgent : Agent
 
         // jump/spike/block (branch 3)
         if (k.spaceKey.isPressed) da[3] = 1;      // jump
-                                                  // (extend with other keys for spike/block if needed)
+
+        if (k.pKey.isPressed) da[3] = 2;   // spike
     }
 
 }

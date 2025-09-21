@@ -5,8 +5,9 @@ public class VolleyballSettings : MonoBehaviour
     [Header("Agent Settings")]
     public float agentRunSpeed = 1.5f;
     public float agentJumpHeight = 2.75f;
-    public float agentJumpVelocity = 777;
-    public float agentJumpVelocityMaxChange = 10;
+    public float agentJumpVelocity = 777f;
+    public float agentJumpVelocityMaxChange = 10f;
+    public float spikePower = 1000f;
 
     // Slows down strafe & backward movement
     public float speedReductionFactor = 0.75f;
@@ -17,5 +18,5 @@ public class VolleyballSettings : MonoBehaviour
     public Material defaultMaterial;
 
     // This is a downward force applied when falling to make jumps look less floaty
-    public float fallingForce = 100;
+    public float fallingForce = 25;
 }

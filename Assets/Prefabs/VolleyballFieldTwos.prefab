@@ -1164,12 +1164,12 @@ MonoBehaviour:
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 03000000030000000300000002000000
-    VectorActionSize: 03000000030000000300000002000000
+      BranchSizes: 0300000003000000030000000200000002000000
+    VectorActionSize: 0300000003000000030000000200000002000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: b2e98f2fcf4d99047b0708251478d10b, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -1196,15 +1196,16 @@ MonoBehaviour:
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 2783493210394317129}
-  teamId: 0
-  role: 2
-  ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
+  role: 2
+  teamId: 0
+  ball: {fileID: 3305385571356851491}
   hitGroundColliders:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  spikeWindow: 0.5
 --- !u!114 &6502425604794067765
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1266,8 +1267,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 0.25, z: 1}
+  m_Center: {x: 0, y: -0.375, z: 0}
 --- !u!135 &8227429486516250005
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -1287,7 +1288,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.75
+  m_Radius: 0.6
   m_Center: {x: 0, y: 0.25, z: 0}
 --- !u!1 &1530296227689085942
 GameObject:
@@ -1765,12 +1766,12 @@ MonoBehaviour:
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 03000000030000000300000002000000
-    VectorActionSize: 03000000030000000300000002000000
+      BranchSizes: 0300000003000000030000000200000002000000
+    VectorActionSize: 0300000003000000030000000200000002000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: b2e98f2fcf4d99047b0708251478d10b, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -1797,15 +1798,16 @@ MonoBehaviour:
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 8535513846028624241}
-  teamId: 0
-  role: 2
-  ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
+  role: 2
+  teamId: 0
+  ball: {fileID: 3305385571356851491}
   hitGroundColliders:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  spikeWindow: 0.5
 --- !u!114 &1972726303617362543
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1867,8 +1869,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 0.25, z: 1}
+  m_Center: {x: 0, y: -0.375, z: 0}
 --- !u!135 &6071761373454468944
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -1888,7 +1890,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.75
+  m_Radius: 0.6
   m_Center: {x: 0, y: 0.25, z: 0}
 --- !u!1 &2410273422190019400
 GameObject:
@@ -3536,12 +3538,12 @@ MonoBehaviour:
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 03000000030000000300000002000000
-    VectorActionSize: 03000000030000000300000002000000
+      BranchSizes: 0300000003000000030000000200000002000000
+    VectorActionSize: 0300000003000000030000000200000002000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: b2e98f2fcf4d99047b0708251478d10b, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -3568,15 +3570,16 @@ MonoBehaviour:
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 1010130669073776822}
-  teamId: 1
-  role: 2
-  ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
+  role: 2
+  teamId: 1
+  ball: {fileID: 3305385571356851491}
   hitGroundColliders:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  spikeWindow: 0.5
 --- !u!114 &2681912239595519370
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3638,8 +3641,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 0.25, z: 1}
+  m_Center: {x: 0, y: -0.375, z: 0}
 --- !u!135 &6690637790669556119
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -3659,7 +3662,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.75
+  m_Radius: 0.6
   m_Center: {x: 0, y: 0.25, z: 0}
 --- !u!1 &4701458326157998326
 GameObject:
@@ -5547,12 +5550,12 @@ MonoBehaviour:
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 03000000030000000300000002000000
-    VectorActionSize: 03000000030000000300000002000000
+      BranchSizes: 0300000003000000030000000200000002000000
+    VectorActionSize: 0300000003000000030000000200000002000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: b2e98f2fcf4d99047b0708251478d10b, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: VolleyballAgent
@@ -5579,15 +5582,16 @@ MonoBehaviour:
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
   teammate: {fileID: 2756245957533092973}
-  teamId: 1
-  role: 2
-  ball: {fileID: 3305385571356851491}
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
+  role: 2
+  teamId: 1
+  ball: {fileID: 3305385571356851491}
   hitGroundColliders:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  spikeWindow: 0.5
 --- !u!114 &2102206573894421874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5649,8 +5653,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 0.25, z: 1}
+  m_Center: {x: 0, y: -0.375, z: 0}
 --- !u!135 &233341114229558714
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -5670,7 +5674,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.75
+  m_Radius: 0.6
   m_Center: {x: 0, y: 0.25, z: 0}
 --- !u!1 &6950193225425142225
 GameObject:
@@ -7373,6 +7377,14 @@ PrefabInstance:
       objectReference: {fileID: 6356911934796212663}
     - target: {fileID: 3883650878997386208, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
       propertyPath: m_IsTrigger
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5747728886072966209, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
+      propertyPath: m_Mass
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5747728886072966209, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
+      propertyPath: m_CollisionDetection
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6125876905343170247, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
