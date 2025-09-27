@@ -1160,12 +1160,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 38
+    VectorObservationSize: 123
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 0300000003000000030000000200000002000000
-    VectorActionSize: 0300000003000000030000000200000002000000
+      BranchSizes: 0300000003000000030000000300000002000000
+    VectorActionSize: 0300000003000000030000000300000002000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
@@ -1195,7 +1195,8 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
-  teammate: {fileID: 2783493210394317129}
+  teammates: []
+  opponents: []
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
   role: 2
@@ -1205,7 +1206,10 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  isSpiking: 0
   spikeWindow: 0.5
+  isBumping: 0
+  bumpWindow: 0.5
 --- !u!114 &6502425604794067765
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1762,12 +1766,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 38
+    VectorObservationSize: 123
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 0300000003000000030000000200000002000000
-    VectorActionSize: 0300000003000000030000000200000002000000
+      BranchSizes: 0300000003000000030000000300000002000000
+    VectorActionSize: 0300000003000000030000000300000002000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
@@ -1797,7 +1801,8 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
-  teammate: {fileID: 8535513846028624241}
+  teammates: []
+  opponents: []
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
   role: 2
@@ -1807,7 +1812,10 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  isSpiking: 0
   spikeWindow: 0.5
+  isBumping: 0
+  bumpWindow: 0.5
 --- !u!114 &1972726303617362543
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3535,12 +3543,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 38
+    VectorObservationSize: 123
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 0300000003000000030000000200000002000000
-    VectorActionSize: 0300000003000000030000000200000002000000
+      BranchSizes: 0300000003000000030000000300000002000000
+    VectorActionSize: 0300000003000000030000000300000002000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
@@ -3570,7 +3578,8 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
-  teammate: {fileID: 1010130669073776822}
+  teammates: []
+  opponents: []
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
   role: 2
@@ -3580,7 +3589,10 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  isSpiking: 0
   spikeWindow: 0.5
+  isBumping: 0
+  bumpWindow: 0.5
 --- !u!114 &2681912239595519370
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4839,9 +4851,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cab37bfa4e601194da081a71e0b5462f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  velocityRewardForwardWeight: 0.02
-  velocityRewardDownWeight: 0.03
-  velocityRewardMax: 0.4
   touchCooldown: 0.1
   maxStepsBeforeDrop: 150
   ball: {fileID: 3305385571356851491}
@@ -4850,8 +4859,6 @@ MonoBehaviour:
   blueGoal: {fileID: 1255844912213302848}
   redGoal: {fileID: 7090448200735215638}
   net: {fileID: 6346082201770604593}
-  blueAgent: {fileID: 8535513846028624241}
-  redAgent: {fileID: 1010130669073776822}
   MaxEnvironmentSteps: 0
   blueGoalMaterial: {fileID: 2100000, guid: 8340843852529124595a90fd0b2d0004, type: 2}
   redGoalMaterial: {fileID: 2100000, guid: c80b5688e120df54e987d26e3aced0f2, type: 2}
@@ -4862,6 +4869,7 @@ MonoBehaviour:
   lastHitterTeam: 2
   lastHitter: 2
   lastHitterAgent: {fileID: 0}
+  lastHitWasSpike: 0
 --- !u!1 &6465924105929374520
 GameObject:
   m_ObjectHideFlags: 0
@@ -5547,12 +5555,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 38
+    VectorObservationSize: 123
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 0300000003000000030000000200000002000000
-    VectorActionSize: 0300000003000000030000000200000002000000
+      BranchSizes: 0300000003000000030000000300000002000000
+    VectorActionSize: 0300000003000000030000000300000002000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
@@ -5582,7 +5590,8 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   area: {fileID: 6413472765385161230}
-  teammate: {fileID: 2756245957533092973}
+  teammates: []
+  opponents: []
   volleyballSettings: {fileID: 643854720857690604}
   envController: {fileID: 0}
   role: 2
@@ -5592,7 +5601,10 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  isSpiking: 0
   spikeWindow: 0.5
+  isBumping: 0
+  bumpWindow: 0.5
 --- !u!114 &2102206573894421874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7378,12 +7390,24 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
+      propertyPath: bumpPower
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
       propertyPath: spikePower
-      value: 20
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
       propertyPath: fallingForce
       value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
+      propertyPath: agentRunSpeed
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
+      propertyPath: agentJumpHeight
+      value: 3.25
       objectReference: {fileID: 0}
     - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
       propertyPath: redGoalMaterial
@@ -7481,6 +7505,14 @@ PrefabInstance:
     - target: {fileID: 5747728886072966209, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
       propertyPath: m_Mass
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5747728886072966209, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
+      propertyPath: m_LinearDamping
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5747728886072966209, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
+      propertyPath: m_AngularDamping
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5747728886072966209, guid: 6af817d9786dc5841879a2690ac2f5a5, type: 3}
       propertyPath: m_CollisionDetection

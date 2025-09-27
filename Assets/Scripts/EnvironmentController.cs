@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.MLAgents;
 using UnityEditor.PackageManager.Requests;
 using UnityEngine;
+using static UnityEngine.InputSystem.LowLevel.InputStateHistory;
 
 public enum Team
 {
@@ -27,9 +29,6 @@ public class EnvironmentController : MonoBehaviour
     ********************************************************/
 
     //– Gameplay tuning -------------------------------------------------
-    [SerializeField] private float velocityRewardForwardWeight = 0.03f;
-    [SerializeField] private float velocityRewardDownWeight = 0.04f;
-    [SerializeField] private float velocityRewardMax = 0.40f;
     [SerializeField] private float touchCooldown = 0.75f;   // s
     [SerializeField] private int maxStepsBeforeDrop = 150;  // Steps before drop, ~3 sec if FixedUpdate is 0.02
 
@@ -42,9 +41,6 @@ public class EnvironmentController : MonoBehaviour
     [SerializeField] public GameObject redGoal;
     [SerializeField] public GameObject net;
 
-    [SerializeField] private VolleyballAgent blueAgent;   // “primary” blue
-    [SerializeField] private VolleyballAgent redAgent;    // “primary” red
-
     //– ML-Agents -------------------------------------------------------
     public int MaxEnvironmentSteps = 5000;
 
@@ -53,8 +49,6 @@ public class EnvironmentController : MonoBehaviour
      ********************************************************/
 
     //– Cached components ----------------------------------------------
-    private Rigidbody blueAgentRb;
-    private Rigidbody redAgentRb;
     private Renderer blueGoalRenderer;
     private Renderer redGoalRenderer;
     private VolleyballSettings volleyballSettings;
@@ -65,7 +59,12 @@ public class EnvironmentController : MonoBehaviour
     public Material defaultMaterial;
 
     //– Collections -----------------------------------------------------
-    public List<VolleyballAgent> AgentsList = new();   // all 4 agents
+    public List<VolleyballAgent> AgentsList = new();   // all agents
+    public List<VolleyballAgent> BlueAgents =>
+        AgentsList.FindAll(a => a.teamId == Team.Blue);
+    public List<VolleyballAgent> RedAgents => 
+        AgentsList.FindAll(a => a.teamId == Team.Red);
+
     private List<Renderer> RenderersList = new();  // both floor halves
     private readonly Dictionary<VolleyballAgent, float> lastTouchTime = new();
 
@@ -77,6 +76,7 @@ public class EnvironmentController : MonoBehaviour
     public VolleyballAgent lastHitterAgent = null;
     private bool ballPassedOverNet = false;
     private bool serveTouched = false;
+    public bool lastHitWasSpike = false;
 
     //– Role & landing helpers -----------------------------------------
     private readonly Dictionary<VolleyballAgent, Role> currentRole = new();
@@ -140,8 +140,6 @@ public class EnvironmentController : MonoBehaviour
     {
         D("Start – scene initialised, calling ResetScene");
         // Used to control agent & ball starting positions
-        blueAgentRb = blueAgent.GetComponent<Rigidbody>();
-        redAgentRb = redAgent.GetComponent<Rigidbody>();
         ballRb = ball.GetComponent<Rigidbody>();
 
         // Starting ball spawn side
@@ -168,16 +166,8 @@ public class EnvironmentController : MonoBehaviour
         resetTimer++;
         if (MaxEnvironmentSteps > 0 && resetTimer >= MaxEnvironmentSteps)
         {
-            //if (!serveTouched)        // no one ever hit the ball
-            //{
-            //    const float idlePenalty = -0.4f;   // tune magnitude
-            //    blueAgent.AddReward(idlePenalty);
-            //    redAgent.AddReward(idlePenalty);
-            //}
 
             D($"TIMEOUT – {MaxEnvironmentSteps} steps reached");
-            blueAgent.EpisodeInterrupted();
-            redAgent.EpisodeInterrupted();
             ResetScene();
         }
 
@@ -206,22 +196,31 @@ public class EnvironmentController : MonoBehaviour
         Physics.SyncTransforms();
     }
 
-    private Vector3 GetSpawnPosition(Team team, int slot)
-    {
-        // slot: 0 = left (-3), 1 = right (+3)
-        float x = (slot == 0) ? -3f : 3f;
-        float y = 0.5f;
-        float z = 0f;
-        if (team == Team.Blue)
-        {
-            z = -7f;
-        }
-        else if (team == Team.Red)
-        {
-            z = 7f;
-        }
-        else z = 0f;
+    //private Vector3 GetSpawnPosition(Team team, int slot)
+    //{
+    //    // slot: 0 = left (-3), 1 = right (+3)
+    //    float x = (slot == 0) ? -3f : 3f;
+    //    float y = 0.5f;
+    //    float z = 0f;
+    //    if (team == Team.Blue)
+    //    {
+    //        z = -7f;
+    //    }
+    //    else if (team == Team.Red)
+    //    {
+    //        z = 7f;
+    //    }
+    //    else z = 0f;
 
+    //    return new Vector3(x, y, z);
+    //}
+
+    private Vector3 GetSpawnPosition(Team team, int slot, int totalAgents)
+    {
+        float courtWidth = 6f; // adjust as needed
+        float x = -courtWidth / 2f + (courtWidth / (totalAgents - 1)) * slot;
+        float y = 0.5f;
+        float z = (team == Team.Blue) ? -7f : 7f;
         return new Vector3(x, y, z);
     }
 
@@ -243,8 +242,8 @@ public class EnvironmentController : MonoBehaviour
     void UpdateRoles()
     {
         // work per side
-        AssignRoles(Team.Blue);
-        AssignRoles(Team.Red);
+        //AssignRoles(Team.Blue);
+        //AssignRoles(Team.Red);
     }
 
     void AssignRoles(Team team)
@@ -314,6 +313,7 @@ public class EnvironmentController : MonoBehaviour
         lastHitter = Team.Default;
         lastHitterAgent = null;
         lastTouchTime.Clear();
+        lastHitWasSpike = false;
 
         /* ---------- 1. teleport / zero-out every agent ------------------------- */
         int blueSlot = 0, redSlot = 0;
@@ -321,14 +321,13 @@ public class EnvironmentController : MonoBehaviour
         foreach (var ag in AgentsList)
         {
             Team team = ag.teamId;
+            int agentCountPerTeam = AgentsList.Count(a => a.teamId == team);
             int slot = (team == Team.Blue) ? blueSlot++ : redSlot++;
-            slot = Mathf.Clamp(slot, 0, 1);            // only 0 or 1
+            slot = Mathf.Clamp(slot, 0, agentCountPerTeam - 1);
 
-            // 1) local offsets inside the court prefab
-            Vector3 localPos = GetSpawnPosition(team, slot);
+            Vector3 localPos = GetSpawnPosition(team, slot, agentCountPerTeam);
             Quaternion localRot = GetSpawnRotation(team);
 
-            // 2) convert to *scene* space using THIS prefab’s transform
             Vector3 worldPos = transform.TransformPoint(localPos);
             Quaternion worldRot = transform.rotation * localRot;
 
@@ -341,18 +340,7 @@ public class EnvironmentController : MonoBehaviour
                 rb.angularVelocity = Vector3.zero;
             }
 
-            if (slot == 0)
-            {
-                ag.role = Role.Hitter;
-            }
-            else if (slot == 1)
-            {
-                ag.role = Role.Passer;
-            }
-            else
-            {
-                ag.role = Role.Generic;
-            }
+            ag.role = Role.Generic; // reset role
         }
 
         /* ---------- 2. reset the ball ---------- */
@@ -413,19 +401,16 @@ public class EnvironmentController : MonoBehaviour
      *   winner : Team.Blue  or  Team.Red
      *   bonus  : extra shaping reward (0 by default)
      *-----------------------------------------------------------*/
-    private void EndRally(Team winner, float bonus = 0f)
+    private void EndRally(Team winner)
     {
         // 1) primary rewards
         float baseReward = 1f;
-        if (winner == Team.Blue)
+        AddTeamReward(winner, baseReward);
+        AddTeamReward(OpponentOf(winner), -baseReward);
+
+        if (lastHitterAgent != null && lastHitWasSpike)
         {
-            blueAgent.AddReward(baseReward + bonus);
-            redAgent.AddReward(-baseReward);
-        }
-        else
-        {
-            redAgent.AddReward(baseReward + bonus);
-            blueAgent.AddReward(-baseReward);
+            lastHitterAgent.AddReward(0.3f); // bonus for winning with a spike
         }
 
         // 2) next rally serves from the winning side
@@ -433,11 +418,13 @@ public class EnvironmentController : MonoBehaviour
         nextServer = winner;
 
         // 3) finish episodes so stats roll up
-        blueAgent.EndEpisode();
-        redAgent.EndEpisode();
+        foreach (VolleyballAgent a in AgentsList)
+        {
+            a.EndEpisode();
+        }
 
         // 4) hard reset
-        D($"EndRally  winner={winner}  bonus={bonus:F2}");
+        D($"EndRally  winner={winner}");
         ResetScene();
     }
 
@@ -448,19 +435,6 @@ public class EnvironmentController : MonoBehaviour
     {
         Team winner = OpponentOf(faultyTeam);
 
-        float bonus = 0f;
-        if (ballRb != null)
-        {
-            Vector3 v = ballRb.linearVelocity;
-            float forward = (winner == Team.Blue) ? Mathf.Max(0f, v.z)
-                                                  : Mathf.Max(0f, -v.z);
-            float down = Mathf.Max(0f, -v.y);
-            bonus = Mathf.Min(
-                               velocityRewardForwardWeight * forward +
-                               velocityRewardDownWeight * down,
-                               velocityRewardMax);
-        }
-
         D($"FAULT against {faultyTeam}  -> point for {winner}");
         EndRally(winner);
     }
@@ -470,26 +444,6 @@ public class EnvironmentController : MonoBehaviour
      *-----------------------------------------------------------*/
     private void AwardRegularPoint(Team scorer)
     {
-        // small velocity-shaping bonus
-        //float bonus = 0f;
-        //if (ballRb != null)
-        //{
-        //    Vector3 v = ballRb.linearVelocity;
-
-        //    // +Z faces Red side, -Z faces Blue side
-        //    float forward = (scorer == Team.Blue) ? Mathf.Max(0f, v.z)
-        //                                          : Mathf.Max(0f, -v.z);
-        //    float down = Mathf.Max(0f, -v.y);
-
-        //    bonus = velocityRewardForwardWeight * forward +
-        //            velocityRewardDownWeight * down;
-
-        //    bonus = Mathf.Min(bonus, velocityRewardMax);
-        //}
-
-        //D($"Regular point for {scorer}  bonus={bonus:F2}");
-        //EndRally(scorer, bonus);
-
         EndRally(scorer);
     }
 
@@ -510,11 +464,6 @@ public class EnvironmentController : MonoBehaviour
                     }
                     else
                     {
-                        // Self-goal
-                        //if (lastHitterAgent != null && ballPassedOverNet)
-                        //{
-                        //    lastHitterAgent.AddReward(-0.5f);
-                        //}
                         AwardFaultAgainst(Team.Red);
                     }
                     break;
@@ -528,10 +477,6 @@ public class EnvironmentController : MonoBehaviour
                     }
                     else
                     {
-                        //if (lastHitterAgent != null && ballPassedOverNet)
-                        //{
-                        //    lastHitterAgent.AddReward(-0.5f);
-                        //}
                         AwardFaultAgainst(Team.Blue);
                     }
                     break;
@@ -539,10 +484,6 @@ public class EnvironmentController : MonoBehaviour
 
             case Event.HitOutOfBounds:
                 {
-                    //if (lastHitterAgent != null)
-                    //{
-                    //    lastHitterAgent.AddReward(-0.05f);
-                    //}
                     // Default to nextServer if lastHitter is not set
                     Team faultTeam = lastHitter == Team.Default ? nextServer : lastHitter;
                     AwardFaultAgainst(faultTeam);
@@ -567,25 +508,14 @@ public class EnvironmentController : MonoBehaviour
                     if (!ballPassedOverNet)
                     {
                         ballPassedOverNet = true;
-                        UpdateRoles();
+                        //UpdateRoles();
 
                         if (lastHitterAgent != null)
                         {
-                            lastHitterAgent.AddReward(0.3f);
+                            int touches = (lastHitterAgent.teamId == Team.Blue) ? touchesBlue : touchesRed;
+                            AddTeamReward(lastHitterAgent.teamId, 0.01f * touches);
                         }
 
-                        // Uncomment and adjust if you want to further shape the reward for spikes/sets
-                        /*
-                        int touchesSoFar = (lastHitterAgent.teamId == Team.Blue) ? touchesBlue : touchesRed;
-                        if (touchesSoFar == 3 && lastHitterAgent.role == Role.Hitter)
-                        {
-                            lastHitterAgent.AddReward(assistRewardSpiker);
-                        }
-                        if (touchesSoFar < 3)
-                        {
-                            lastHitterAgent.AddReward(-0.2f);
-                        }
-                        */
                         D("PassOverNet – flag set true");
                     }
                     break;
@@ -596,9 +526,10 @@ public class EnvironmentController : MonoBehaviour
     // ============================================================================
     //  REGISTER-TOUCH  – call from agent collider or VolleyballController
     // ============================================================================
-    public void RegisterTouch(VolleyballAgent agent)
+    public void RegisterTouch(VolleyballAgent agent, bool wasSpike)
     {
-        if (agent == null) return;                   // safety
+        if (agent == null) return;
+
         ballPassedOverNet = false;
 
         /*------------------------------------------------------------------
@@ -629,19 +560,15 @@ public class EnvironmentController : MonoBehaviour
             return;                                  // rally ended
         }
 
-        /*------------------------------------------------------------------
-         * 2.5)  ASSIST / SET-SPIKE bonus
-         *       (teammate touched last, ball hasn’t crossed yet)
-         *-----------------------------------------------------------------*/
-        // Which counter to read?
+        // --- SPIKE-ON-SPIKE FAULT --- (add this block here)
+        if (lastHitWasSpike && wasSpike)
+        {
+            D($"Spike-on-spike by {agent.teamId}: rally ended");
+            AwardFaultAgainst(agent.teamId); // Or: AwardFaultAgainst(agent.teamId); or make a special method
+            return;
+        }
 
-        //if (lastHitterAgent != null &&
-        //    lastHitterAgent.teamId == agent.teamId &&      // same side
-        //    lastHitterAgent != agent &&                    // different player
-        //    touchesSoFar == 1 && !ballPassedOverNet)       // still same rally phase
-        //{
-        //    lastHitterAgent.AddReward(assistRewardSetter); // the setter
-        //}
+        lastHitWasSpike = wasSpike;
 
         /*------------------------------------------------------------------
          * 3)  Legal touch – bookkeeping
@@ -659,18 +586,6 @@ public class EnvironmentController : MonoBehaviour
 
         int touchesSoFar = (agent.teamId == Team.Blue) ? touchesBlue : touchesRed;
         D($"RegisterTouch by {agent.teamId}  TB/TR={touchesBlue}/{touchesRed}");
-
-        //Vector3 forward = (agent.teamId == Team.Blue) ? Vector3.forward : Vector3.back;
-        //Vector3 ballVel = ballRb.linearVelocity;
-        //if (ballVel.magnitude > 0.1f) // Ignore near-zero (taps)
-        //{
-        //    float dirScore = Vector3.Dot(ballVel.normalized, forward); // -1 to +1
-        //    if (dirScore < -0.5f)
-        //        lastHitterAgent.AddReward(dirScore * 0.1f); // Strong penalty for wild back hits
-        //    else if (dirScore > 0.1f)
-        //        lastHitterAgent.AddReward(dirScore * 0.07f); // Reward for forward or slightly forward
-        //                                                     // Do nothing for -0.5f < dirScore < 0.1f (sideways or gentle back)
-        //}
 
         /*------------------------------------------------------------------
          * 4)  FOUR-TOUCH fault on a side
@@ -713,7 +628,7 @@ public class EnvironmentController : MonoBehaviour
         ballRb.angularVelocity = Vector3.zero;
 
         /* --- tiny incentive for the server to start the rally ----------------- */
-        if (toucher != null) toucher.AddReward(0.005f);
+        if (toucher != null) AddTeamReward(toucher.teamId, 0.005f);
 
         Physics.SyncTransforms();           // make PhysX pick up the changes NOW
     }
@@ -731,6 +646,15 @@ public class EnvironmentController : MonoBehaviour
 
         D($"UpdateLastHitter -> {lastHitter}");
     }
+
+    public void AddTeamReward(Team team, float reward)
+    {
+        foreach (var agent in AgentsList.Where(a => a.teamId == team))
+        {
+            agent.AddReward(reward);
+        }
+    }
+
 
     /// <summary>
     /// Temporarily tints both ground halves with the winner’s colour.

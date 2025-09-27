@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Policies;
@@ -16,10 +18,14 @@ public class VolleyballAgent : Agent
 {
     // --- UNITY/ML-AGENTS FIELDS ---
     [SerializeField] private GameObject area;
-    [SerializeField] private VolleyballAgent teammate; // Assign in Inspector, or find at runtime
+    [SerializeField] private List<VolleyballAgent> teammates;
+    [SerializeField] private List<VolleyballAgent> opponents;
     [SerializeField] private VolleyballSettings volleyballSettings; // Allow Inspector hookup
     [HideInInspector] public EnvironmentController envController;   // Already there? Keep it.
     [HideInInspector] public Role role = Role.Generic;
+    const int MAX_TEAMMATES = 5;   // For 6 per team, not counting self
+    const int MAX_OPPONENTS = 6;   // 6v6
+    const int MAX_AGENTS = MAX_TEAMMATES + MAX_OPPONENTS + 1;
     public Team teamId;
 
     // --- COMPONENT REFERENCES ---
@@ -27,6 +33,7 @@ public class VolleyballAgent : Agent
     private Renderer agentRenderer;
     private Color defaultColor;
     private static readonly Color spikeColor = new Color(0.5f, 0f, 0.5f); // purple (R,G,B)
+    private static readonly Color bumpColor = new Color(0f, 0.75f, 0f);
     private BehaviorParameters behaviorParameters;
     private EnvironmentParameters resetParams;
 
@@ -43,9 +50,15 @@ public class VolleyballAgent : Agent
     private Vector3 jumpStartingPos;
     private float agentRot;
     private bool canSpike = false;
-    private bool isSpiking = false;
+    public bool isSpiking = false;
     private float spikeTimer = 0f;
     [SerializeField] private float spikeWindow = 0.5f;
+
+    // --- BUMP CONTROLS ---
+    private bool canBump = true;
+    public bool isBumping = false;
+    private float bumpTimer = 0f;
+    [SerializeField] private float bumpWindow = 0.5f;
 
     void Start()
     {
@@ -65,6 +78,9 @@ public class VolleyballAgent : Agent
         // Optional: fallback warning
         if (envController == null)
             Debug.LogError($"[{name}] could not find EnvironmentController in parents!");
+
+        teammates = envController.AgentsList.Where(a => a.teamId == this.teamId && a != this).ToList();
+        opponents = envController.AgentsList.Where(a => a.teamId != this.teamId).ToList();
 
         base.Awake();
     }
@@ -95,6 +111,9 @@ public class VolleyballAgent : Agent
         isSpiking = false;
         spikeTimer = 0f;
         canSpike = false;
+        isBumping = false;
+        bumpTimer = 0f;
+        canBump = true;
     }
 
     /// <summary>
@@ -155,65 +174,63 @@ public class VolleyballAgent : Agent
         {
             if (envController != null)
             {
-                envController.RegisterTouch(this);
-                AddReward(0.005f);
+                envController.RegisterTouch(this, isSpiking);
+                AddReward(0.002f);
             }
 
             if (isSpiking)
             {
-                if (isSpiking)
-                {
-                    float spikePower = volleyballSettings.spikePower;
-                    Vector3 spikeDir = transform.forward.normalized;
+                float spikePower = volleyballSettings.spikePower;
+                Vector3 spikeDir = transform.forward.normalized;
 
-                    Debug.Log($"spikeDir: {spikeDir}, spikePower: {spikePower}, result: {spikeDir * spikePower}");
+                //Debug.Log($"spikeDir: {spikeDir}, spikePower: {spikePower}, result: {spikeDir * spikePower}");
 
-                    // Combine spike direction and power, set slight downward arc
-                    Vector3 spikeVelocity = spikeDir * spikePower;
-                    spikeVelocity.y = -0.1f * spikePower; // or just 0 if you want laser flat
+                // Combine spike direction and power, set slight downward arc
+                Vector3 spikeVelocity = spikeDir * spikePower;
+                spikeVelocity.y = -3f;
 
-                    ballRb.linearVelocity = spikeVelocity;
+                ballRb.linearVelocity = spikeVelocity;
 
-                    isSpiking = false;
-                    spikeTimer = 0f;
-                }
-
+                isSpiking = false;
+                spikeTimer = 0f;
+                AddReward(-0.001f);
             }
 
-        }
-
-        //  ---   TEAM-MATE BUMP   ----------------------------------------------
-        // “CompareTag("agent")” is the cheapest, but you can also
-        // check `c.collider.GetComponent<VolleyballAgent>()` if you prefer
-        if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent"))
-        {
-            // Make sure it’s the *teammate*, not an opponent
-            if (teammate != null && c.collider.gameObject == teammate.gameObject)
+            if (isBumping)
             {
-                AddReward(-0.02f);
+                float bumpPower = volleyballSettings.bumpPower; // e.g., 5–7
+                                                                // 15% forward, 99% upward (parabolic)
+                Vector3 bumpDir = (transform.forward * 0.20f + Vector3.up * 1f).normalized;
+                Vector3 bumpVelocity = bumpDir * bumpPower;
+
+                ballRb.linearVelocity = bumpVelocity;
+
+                isBumping = false;
+                bumpTimer = 0f;
+                AddReward(0.002f); // tweak as needed
             }
         }
     }
 
     void OnCollisionStay(Collision c)
     {
-        if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent") &&
-            teammate != null && c.collider.gameObject == teammate.gameObject)
+        foreach (VolleyballAgent a in teammates)
         {
-            AddReward(-0.03f * 0.2f); // small drain each physics step
+            if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent") &&
+            a != null && c.collider.gameObject == a.gameObject)
+            {
+                AddReward(-0.03f); // small drain each physics step
+            }
         }
     }
-
-
-
 
     /// <summary>
     /// Starts the jump sequence
     /// </summary>
     public void Jump(bool isSpikeJump)
     {
-        AddReward(-0.0005f);
-        jumpingTime = isSpikeJump ? 0.26f : 0.2f; // Higher/faster jump for spike
+        AddReward(-0.0075f);
+        jumpingTime = isSpiking ? 0.25f : 0.2f; // Higher/faster jump for spike
         jumpStartingPos = agentRb.position;
         canSpike = isSpikeJump;
         isSpiking = isSpikeJump;   // Set spiking mode if spike jump
@@ -237,6 +254,7 @@ public class VolleyballAgent : Agent
         var rotateDirAction = act[1];
         var dirToGoSideAction = act[2];
         var jumpAction = act[3];
+        var bumpAction = act[4];
 
         if (dirToGoForwardAction == 1)
             dirToGo = (grounded ? 1f : 0.5f) * transform.forward * 1f;
@@ -262,7 +280,6 @@ public class VolleyballAgent : Agent
             Jump(isSpikeJump);
         }
 
-
         transform.Rotate(rotateDir, Time.fixedDeltaTime * 200f);
         agentRb.AddForce(dirToGo * volleyballSettings.agentRunSpeed,
             ForceMode.VelocityChange);
@@ -283,49 +300,86 @@ public class VolleyballAgent : Agent
             agentRb.AddForce(Vector3.down * volleyballSettings.fallingForce, ForceMode.Acceleration);
         }
 
-        if (jumpingTime > 0f)
-        {
-            jumpingTime -= Time.fixedDeltaTime;
-        }
-
         if (!grounded && jumpAction == 2 && canSpike)
         {
             isSpiking = true;
             spikeTimer = spikeWindow;
             canSpike = false;  // Disable until next jump
+        } else if (grounded && bumpAction == 1 && canBump)
+        {
+            isBumping = true;
+            bumpTimer = bumpWindow;
+            canBump = false;  // Disable until next grounded
         }
+
+        // Cancel bump if jump or spike initiated
+        if (!grounded || jumpAction == 1 || jumpAction == 2 || isSpiking)
+        {
+            isBumping = false;
+            bumpTimer = 0f;
+        }
+
+        // --- Clean canBump logic: ---
+        // Always reset canBump when grounded, not bumping, and not spiking
+        if (grounded && !isBumping && !isSpiking)
+            canBump = true;
     }
 
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
-        const float airPenaltyPerStep = 0.0001f;   // tune as you like
+        const float airPenaltyPerStep = 0.0001f;   // Tweak as needed
 
-        bool grounded = CheckIfGrounded();
-        if (!grounded)
+        // --- Always reset isSpiking if grounded ---
+        if (CheckIfGrounded())
+            isSpiking = false;
+
+        // --- Rewards ---
+        if (!CheckIfGrounded())
             AddReward(-airPenaltyPerStep);
 
-        AddReward(-0.0005f);
+        AddReward(-0.0005f); // Small time penalty
 
-        if (teammate != null)
-        {
-            float dist = Vector3.Distance(transform.position, teammate.transform.position);
-            if (dist < 0.5f) AddReward(-0.0005f);   // crowding
-        }
+        // --- Timers ---
+        if (jumpingTime > 0f)
+            jumpingTime -= Time.fixedDeltaTime;
 
-        if (isSpiking)
+        // --- Spike State ---
+        if (isSpiking && spikeTimer > 0f)
         {
             spikeTimer -= Time.fixedDeltaTime;
             if (spikeTimer <= 0f)
-            {
                 isSpiking = false;
+            spikeTimer = 0f;
+        }
+
+        // --- Bump State ---
+        if (isBumping && bumpTimer > 0f)
+        {
+            bumpTimer -= Time.fixedDeltaTime;
+            if (bumpTimer <= 0f || !CheckIfGrounded())
+            {
+                isBumping = false;
+                bumpTimer = 0f;
             }
         }
 
+        // --- Visual feedback ---
         if (agentRenderer != null)
         {
-            agentRenderer.material.color = isSpiking ? spikeColor : defaultColor;
+            agentRenderer.material.color =
+                isSpiking ? spikeColor :
+                isBumping ? bumpColor :
+                defaultColor;
         }
 
+        // --- Bump Ability Reset (when grounded and not bumping and not spiking) ---
+        if (CheckIfGrounded() && !isBumping && !isSpiking)
+            canBump = true;
+
+        // (Optional debugging)
+        // Debug.Log($"{name}: OnActionReceived | isSpiking={isSpiking} | isBumping={isBumping} | canBump={canBump}");
+
+        // --- Movement ---
         MoveAgent(actionBuffers.DiscreteActions);
     }
 
@@ -387,43 +441,77 @@ public class VolleyballAgent : Agent
         AddF(bv.z * agentRot);
         AddF(bv.x * agentRot);
 
-        Vector3 landWorld = PredictLanding(ballRb);         // world coords
-        Vector3 landRel = new Vector3(
-                (landWorld.x - transform.position.x) * agentRot,
-                (landWorld.y - transform.position.y),
-                (landWorld.z - transform.position.z) * agentRot
-            );
-        landRel.y = 0;
+        //Vector3 landWorld = PredictLanding(ballRb);         // world coords
+        //Vector3 landRel = new Vector3(
+        //        (landWorld.x - transform.position.x) * agentRot,
+        //        (landWorld.y - transform.position.y),
+        //        (landWorld.z - transform.position.z) * agentRot
+        //    );
+        //landRel.y = 0;
 
-        Vector3 landDir = landRel.sqrMagnitude > 1e-6f ? landRel.normalized : Vector3.zero;
-        AddV(landDir);                                      // 3 floats
-        AddF(Mathf.Clamp01(landRel.magnitude / maxDist));   // 1 float
+        //Vector3 landDir = landRel.sqrMagnitude > 1e-6f ? landRel.normalized : Vector3.zero;
+        //AddV(landDir);                                      // 3 floats
+        //AddF(Mathf.Clamp01(landRel.magnitude / maxDist));   // 1 float
 
         // 3.  TEAM-MATE INFO  (unchanged, your block here)
-        if (teammate != null)
+        for (int i = 0; i < MAX_TEAMMATES; i++)
         {
-            Vector3 toMate = new Vector3(
-                (teammate.transform.position.x - transform.position.x) * agentRot,
-                (teammate.transform.position.y - transform.position.y),
-                (teammate.transform.position.z - transform.position.z) * agentRot
-            );
+            VolleyballAgent a = (i < teammates.Count) ? teammates[i] : null;
+            if (a != null)
+            {
+                Vector3 toMate = new Vector3(
+                    (a.transform.position.x - transform.position.x) * agentRot,
+                    (a.transform.position.y - transform.position.y),
+                    (a.transform.position.z - transform.position.z) * agentRot
+                );
+                float dist = Mathf.Clamp01(toMate.magnitude / maxDist);
 
-            Vector3 mateDir = toMate.sqrMagnitude > 1e-6f ? toMate.normalized : Vector3.zero;
-            AddV(mateDir); // 3
+                Vector3 mateDir = toMate.sqrMagnitude > 1e-6f ? toMate.normalized : Vector3.zero;
+                AddV(mateDir); // 3
 
-            Vector3 mateVel = teammate.GetComponent<Rigidbody>().linearVelocity / 10f;
-            // mirror x/z for symmetry
-            AddF(mateVel.y);
-            AddF(mateVel.z * agentRot);
-            AddF(mateVel.x * agentRot);
+                AddF(dist); // 1
+
+                Vector3 mateVel = a.GetComponent<Rigidbody>().linearVelocity / 10f;
+                AddF(mateVel.y);
+                AddF(mateVel.z * agentRot);
+                AddF(mateVel.x * agentRot);
+            }
+            else
+            {
+                AddV(Vector3.zero); // 3
+                AddF(0f);           // 1
+                AddF(0f);           // vy
+                AddF(0f);           // vz
+                AddF(0f);           // vx
+            }
         }
-        else
+
+        for (int i = 0; i < MAX_OPPONENTS; i++)
         {
-            // pad if null (keeps obs size constant)
-            AddV(Vector3.zero); // dir
-            AddF(0f); // vy
-            AddF(0f); // vz
-            AddF(0f); // vx
+            VolleyballAgent a = (i < opponents.Count) ? opponents[i] : null;
+            if (a != null)
+            {
+                Vector3 toMate = new Vector3(
+                    (a.transform.position.x - transform.position.x) * agentRot,
+                    (a.transform.position.y - transform.position.y),
+                    (a.transform.position.z - transform.position.z) * agentRot
+                );
+
+                Vector3 mateDir = toMate.sqrMagnitude > 1e-6f ? toMate.normalized : Vector3.zero;
+                AddV(mateDir); // 3
+
+                Vector3 mateVel = a.GetComponent<Rigidbody>().linearVelocity / 10f;
+                AddF(mateVel.y);
+                AddF(mateVel.z * agentRot);
+                AddF(mateVel.x * agentRot);
+            }
+            else
+            {
+                AddV(Vector3.zero); // 3
+                AddF(0f);           // vy
+                AddF(0f);           // vz
+                AddF(0f);           // vx
+            }
         }
 
         //----------------------------------------------------------------------
@@ -457,12 +545,30 @@ public class VolleyballAgent : Agent
         AddDirAndDist(opponentGoalLocal); // 4 floats
                                           //  >>> +12 floats total
 
-        AddF(role == Role.Passer ? 1f : 0f);
-        AddF(role == Role.Hitter ? 1f : 0f);
+        //AddF(role == Role.Passer ? 1f : 0f);
+        //AddF(role == Role.Hitter ? 1f : 0f);
 
-        float lastTouchFlag = (envController.lastHitterAgent == this) ? 1f :
-                       (envController.lastHitterAgent == teammate) ? -1f : 0f;
-        AddF(lastTouchFlag);
+        float lastTouch = (envController.lastHitterAgent == this) ? 1f :
+            (teammates.Contains(envController.lastHitterAgent)) ? -1f : 0f;
+        AddF(lastTouch);
+
+        for (int i = 0; i < MAX_AGENTS; i++)
+        {
+            VolleyballAgent a = (i < envController.AgentsList.Count) ? envController.AgentsList[i] : null;
+            if (a != null)
+            {
+                AddF(a.isSpiking ? 1f : 0f);
+                AddF(a.isBumping ? 1f : 0f);
+            }
+            else
+            {
+                AddF(0f);
+                AddF(0f);
+            }
+        }
+
+        AddF((float)teammates.Count / MAX_TEAMMATES);   // Normalized teammate count
+        AddF((float)opponents.Count / MAX_OPPONENTS);   // Normalized opponent count
 
         //----------------------------------------------------------------------
         // 5.  TOUCHES & GROUNDED FLAG  (unchanged)
@@ -536,6 +642,8 @@ public class VolleyballAgent : Agent
         if (k.spaceKey.isPressed) da[3] = 1;      // jump
 
         if (k.pKey.isPressed) da[3] = 2;   // spike
+
+        if (k.bKey.isPressed) da[4] = 1;      // bump
     }
 
 }
