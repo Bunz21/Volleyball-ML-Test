@@ -407,11 +407,11 @@ public class EnvironmentController : MonoBehaviour
     {
         if (isResettingRally)
         {
-            Debug.Log("[DEBUG] EndRally skipped, already resetting!");
+            //Debug.Log("[DEBUG] EndRally skipped, already resetting!");
             return;
         }
         isResettingRally = true;
-        Debug.Log("[DEBUG] EndRally STARTED");
+        //Debug.Log("[DEBUG] EndRally STARTED");
 
         // 1) primary rewards
         float baseReward = 1f;
@@ -443,7 +443,7 @@ public class EnvironmentController : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f); // adjust as needed
         isResettingRally = false;
-        Debug.Log("[DEBUG] EndRally ready for next rally.");
+        //Debug.Log("[DEBUG] EndRally ready for next rally.");
     }
 
     /*------------------------------------------------------------

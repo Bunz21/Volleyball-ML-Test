@@ -5712,7 +5712,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cab37bfa4e601194da081a71e0b5462f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  touchCooldown: 0.1
+  touchCooldown: 0.25
   maxStepsBeforeDrop: 150
   ball: {fileID: 3305385571356851491}
   ballRb: {fileID: 3970031669195569061}
@@ -5720,7 +5720,7 @@ MonoBehaviour:
   blueGoal: {fileID: 1255844912213302848}
   redGoal: {fileID: 7090448200735215638}
   net: {fileID: 6346082201770604593}
-  MaxEnvironmentSteps: 0
+  MaxEnvironmentSteps: 5000
   blueGoalMaterial: {fileID: 2100000, guid: 8340843852529124595a90fd0b2d0004, type: 2}
   redGoalMaterial: {fileID: 2100000, guid: c80b5688e120df54e987d26e3aced0f2, type: 2}
   defaultMaterial: {fileID: 2100000, guid: 6eecaeb456bdab9459ef9cffee268819, type: 2}
