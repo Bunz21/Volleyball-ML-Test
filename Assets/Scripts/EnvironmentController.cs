@@ -89,6 +89,7 @@ public class EnvironmentController : MonoBehaviour
     private bool isBallFrozen = false;
     private int ballSpawnSide = -1;           // -1 blue court | 1 red court
     private int resetTimer;
+    private bool isResettingRally = false;
 
     /********************************************************
      *  HELPERS
@@ -389,6 +390,7 @@ public class EnvironmentController : MonoBehaviour
         if (ballCol != null) ballCol.isTrigger = true;
 
         Physics.SyncTransforms();
+
         D($"ResetBall  side={(ballSpawnSide == -1 ? "Blue" : "Red")}  server={nextServer}");
     }
 
@@ -403,6 +405,14 @@ public class EnvironmentController : MonoBehaviour
      *-----------------------------------------------------------*/
     private void EndRally(Team winner)
     {
+        if (isResettingRally)
+        {
+            Debug.Log("[DEBUG] EndRally skipped, already resetting!");
+            return;
+        }
+        isResettingRally = true;
+        Debug.Log("[DEBUG] EndRally STARTED");
+
         // 1) primary rewards
         float baseReward = 1f;
         AddTeamReward(winner, baseReward);
@@ -426,6 +436,14 @@ public class EnvironmentController : MonoBehaviour
         // 4) hard reset
         D($"EndRally  winner={winner}");
         ResetScene();
+        StartCoroutine(ResetRallyCooldown());
+    }
+
+    private IEnumerator ResetRallyCooldown()
+    {
+        yield return new WaitForSeconds(0.5f); // adjust as needed
+        isResettingRally = false;
+        Debug.Log("[DEBUG] EndRally ready for next rally.");
     }
 
     /*------------------------------------------------------------
@@ -618,7 +636,7 @@ public class EnvironmentController : MonoBehaviour
         isBallFrozen = false;
         serveTouched = true;
         D($"Un-freeze on first touch by {toucher.teamId}");
-
+        
         /* --- restore normal collider / physics -------------------------------- */
         if (ballCol != null) ballCol.isTrigger = false;
 

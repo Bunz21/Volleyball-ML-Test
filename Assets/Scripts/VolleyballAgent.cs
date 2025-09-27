@@ -29,7 +29,7 @@ public class VolleyballAgent : Agent
     public Team teamId;
 
     // --- COMPONENT REFERENCES ---
-    private Rigidbody agentRb;
+    public Rigidbody agentRb;
     private Renderer agentRenderer;
     private Color defaultColor;
     private static readonly Color spikeColor = new Color(0.5f, 0f, 0.5f); // purple (R,G,B)
@@ -182,8 +182,6 @@ public class VolleyballAgent : Agent
             {
                 float spikePower = volleyballSettings.spikePower;
                 Vector3 spikeDir = transform.forward.normalized;
-
-                //Debug.Log($"spikeDir: {spikeDir}, spikePower: {spikePower}, result: {spikeDir * spikePower}");
 
                 // Combine spike direction and power, set slight downward arc
                 Vector3 spikeVelocity = spikeDir * spikePower;
@@ -375,9 +373,6 @@ public class VolleyballAgent : Agent
         // --- Bump Ability Reset (when grounded and not bumping and not spiking) ---
         if (CheckIfGrounded() && !isBumping && !isSpiking)
             canBump = true;
-
-        // (Optional debugging)
-        // Debug.Log($"{name}: OnActionReceived | isSpiking={isSpiking} | isBumping={isBumping} | canBump={canBump}");
 
         // --- Movement ---
         MoveAgent(actionBuffers.DiscreteActions);
