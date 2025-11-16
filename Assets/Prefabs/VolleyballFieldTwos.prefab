@@ -1257,7 +1257,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -1692,7 +1692,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -2225,7 +2225,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -4175,7 +4175,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -6319,7 +6319,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -6703,7 +6703,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 1
   m_BehaviorName: VolleyballAgent
   TeamId: 0
   m_UseChildSensors: 1
@@ -8709,7 +8709,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
       propertyPath: fallingForce
-      value: 100
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
       propertyPath: agentRunSpeed
@@ -8717,7 +8717,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
       propertyPath: agentJumpHeight
-      value: 3
+      value: 3.5
       objectReference: {fileID: 0}
     - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
       propertyPath: redGoalMaterial
@@ -8727,6 +8727,10 @@ PrefabInstance:
       propertyPath: blueGoalMaterial
       value: 
       objectReference: {fileID: 2100000, guid: 8340843852529124595a90fd0b2d0004, type: 2}
+    - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
+      propertyPath: agentJumpVelocity
+      value: 600
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

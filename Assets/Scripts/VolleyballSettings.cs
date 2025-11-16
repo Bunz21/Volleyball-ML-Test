@@ -3,12 +3,12 @@ using UnityEngine;
 public class VolleyballSettings : MonoBehaviour
 {
     [Header("Agent Settings")]
-    public float agentRunSpeed = 1.5f;
-    public float agentJumpHeight = 3.25f;
-    public float agentJumpVelocity = 777f;
+    public float agentRunSpeed = 1.25f;
+    public float agentJumpHeight = 3.5f;
+    public float agentJumpVelocity = 600f;
     public float agentJumpVelocityMaxChange = 10f;
-    public float spikePower = 30; // TEST
-    public float bumpPower = 10f;   // TEST
+    public float spikePower = 20; // TEST
+    public float bumpPower = 20f;   // TEST
 
     // Slows down strafe & backward movement
     public float speedReductionFactor = 0.75f;
@@ -19,5 +19,5 @@ public class VolleyballSettings : MonoBehaviour
     public Material defaultMaterial;
 
     // This is a downward force applied when falling to make jumps look less floaty
-    public float fallingForce = 25;
+    public float fallingForce = 50;
 }

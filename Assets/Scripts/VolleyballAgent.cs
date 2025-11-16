@@ -178,20 +178,37 @@ public class VolleyballAgent : Agent
                 AddReward(0.002f);
             }
 
+            //if (isSpiking)
+            //{
+            //    float spikePower = volleyballSettings.spikePower;
+            //    Vector3 spikeDir = transform.forward.normalized;
+
+            //    // Combine spike direction and power, set slight downward arc
+            //    Vector3 spikeVelocity = spikeDir * spikePower;
+            //    spikeVelocity.y = -3f;
+
+            //    ballRb.linearVelocity = spikeVelocity;
+
+            //    isSpiking = false;
+            //    spikeTimer = 0f;
+            //    AddReward(-0.001f);
+            //}
+
             if (isSpiking)
             {
                 float spikePower = volleyballSettings.spikePower;
-                Vector3 spikeDir = transform.forward.normalized;
 
-                // Combine spike direction and power, set slight downward arc
+                // Use agent's forward direction but add downward angle
+                Vector3 spikeDir = transform.forward;
+                spikeDir.y = -0.25f; // Downward component
+                spikeDir.Normalize();
+
                 Vector3 spikeVelocity = spikeDir * spikePower;
-                spikeVelocity.y = -3f;
-
                 ballRb.linearVelocity = spikeVelocity;
 
                 isSpiking = false;
                 spikeTimer = 0f;
-                AddReward(-0.001f);
+                AddReward(0.01f);
             }
 
             if (isBumping)
@@ -205,7 +222,7 @@ public class VolleyballAgent : Agent
 
                 isBumping = false;
                 bumpTimer = 0f;
-                AddReward(0.002f); // tweak as needed
+                AddReward(0.02f); // tweak as needed
             }
         }
     }
