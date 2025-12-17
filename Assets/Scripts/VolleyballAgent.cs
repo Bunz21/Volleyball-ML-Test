@@ -10,8 +10,16 @@ using UnityEngine.InputSystem;
 public enum Role
 {
     Passer,
+    Setter,
     Hitter,
     Generic
+}
+
+public enum TouchType
+{
+    Bump,
+    Set,
+    Spike
 }
 
 public class VolleyballAgent : Agent
@@ -166,7 +174,6 @@ public class VolleyballAgent : Agent
     /// <summary>
     /// Called when agent collides with the something
     /// </summary>
-    // Called when agent collides with the something
     void OnCollisionEnter(Collision c)
     {
         //  ---   BALL TOUCH   --------------------------------------------------
@@ -174,25 +181,8 @@ public class VolleyballAgent : Agent
         {
             if (envController != null)
             {
-                envController.RegisterTouch(this, isSpiking);
-                AddReward(0.002f);
+                envController.RegisterTouch(this, isSpiking ? TouchType.Spike : (isBumping ? TouchType.Set : TouchType.Bump));
             }
-
-            //if (isSpiking)
-            //{
-            //    float spikePower = volleyballSettings.spikePower;
-            //    Vector3 spikeDir = transform.forward.normalized;
-
-            //    // Combine spike direction and power, set slight downward arc
-            //    Vector3 spikeVelocity = spikeDir * spikePower;
-            //    spikeVelocity.y = -3f;
-
-            //    ballRb.linearVelocity = spikeVelocity;
-
-            //    isSpiking = false;
-            //    spikeTimer = 0f;
-            //    AddReward(-0.001f);
-            //}
 
             if (isSpiking)
             {
@@ -208,22 +198,25 @@ public class VolleyballAgent : Agent
 
                 isSpiking = false;
                 spikeTimer = 0f;
-                AddReward(0.01f);
             }
 
             if (isBumping)
             {
                 float bumpPower = volleyballSettings.bumpPower; // e.g., 5–7
                                                                 // 15% forward, 99% upward (parabolic)
-                Vector3 bumpDir = (transform.forward * 0.20f + Vector3.up * 1f).normalized;
+                Vector3 bumpDir = (transform.forward * 0.15f + Vector3.up * 1f).normalized;
                 Vector3 bumpVelocity = bumpDir * bumpPower;
 
                 ballRb.linearVelocity = bumpVelocity;
 
                 isBumping = false;
                 bumpTimer = 0f;
-                AddReward(0.02f); // tweak as needed
             }
+        }
+
+        if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent") && agentRb != null && c.collider.gameObject != agentRb.gameObject)
+        {
+            AddReward(-0.05f); // penalty on collision with teammate
         }
     }
 
@@ -234,7 +227,7 @@ public class VolleyballAgent : Agent
             if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent") &&
             a != null && c.collider.gameObject == a.gameObject)
             {
-                AddReward(-0.03f); // small drain each physics step
+                AddReward(-0.03f); // small drain each physics step - doesn't work
             }
         }
     }
@@ -249,6 +242,11 @@ public class VolleyballAgent : Agent
         jumpStartingPos = agentRb.position;
         canSpike = isSpikeJump;
         isSpiking = isSpikeJump;   // Set spiking mode if spike jump
+    }
+
+    void AgentPositioning ()
+    {
+        // Optional: implement later
     }
 
     /// <summary>
@@ -352,7 +350,7 @@ public class VolleyballAgent : Agent
         if (!CheckIfGrounded())
             AddReward(-airPenaltyPerStep);
 
-        AddReward(-0.0005f); // Small time penalty
+        //AddReward(-0.0005f); // Small time penalty TESTING
 
         // --- Timers ---
         if (jumpingTime > 0f)
@@ -487,6 +485,10 @@ public class VolleyballAgent : Agent
                 AddF(mateVel.y);
                 AddF(mateVel.z * agentRot);
                 AddF(mateVel.x * agentRot);
+                AddF(a.role == Role.Passer ? 1f : 0f);
+                AddF(a.role == Role.Hitter ? 1f : 0f);
+                AddF(a.role == Role.Setter ? 1f : 0f);
+                AddF(a.role == Role.Generic ? 1f : 0f);
             }
             else
             {
@@ -495,6 +497,10 @@ public class VolleyballAgent : Agent
                 AddF(0f);           // vy
                 AddF(0f);           // vz
                 AddF(0f);           // vx
+                AddF(0f);           // passer
+                AddF(0f);           // hitter
+                AddF(0f);           // setter
+                AddF(0f);           // generic
             }
         }
 
@@ -509,20 +515,29 @@ public class VolleyballAgent : Agent
                     (a.transform.position.z - transform.position.z) * agentRot
                 );
 
-                Vector3 mateDir = toMate.sqrMagnitude > 1e-6f ? toMate.normalized : Vector3.zero;
-                AddV(mateDir); // 3
+                Vector3 oppDir = toMate.sqrMagnitude > 1e-6f ? toMate.normalized : Vector3.zero;
+                AddV(oppDir); // 3
 
-                Vector3 mateVel = a.GetComponent<Rigidbody>().linearVelocity / 10f;
-                AddF(mateVel.y);
-                AddF(mateVel.z * agentRot);
-                AddF(mateVel.x * agentRot);
+                Vector3 oppVel = a.GetComponent<Rigidbody>().linearVelocity / 10f;
+                AddF(oppVel.y);
+                AddF(oppVel.z * agentRot);
+                AddF(oppVel.x * agentRot);
+                AddF(a.role == Role.Passer ? 1f : 0f);
+                AddF(a.role == Role.Hitter ? 1f : 0f);
+                AddF(a.role == Role.Setter ? 1f : 0f);
+                AddF(a.role == Role.Generic ? 1f : 0f);
             }
             else
             {
                 AddV(Vector3.zero); // 3
+                AddF(0f);           // 1
                 AddF(0f);           // vy
                 AddF(0f);           // vz
                 AddF(0f);           // vx
+                AddF(0f);           // passer
+                AddF(0f);           // hitter
+                AddF(0f);           // setter
+                AddF(0f);           // generic
             }
         }
 
@@ -557,8 +572,10 @@ public class VolleyballAgent : Agent
         AddDirAndDist(opponentGoalLocal); // 4 floats
                                           //  >>> +12 floats total
 
-        //AddF(role == Role.Passer ? 1f : 0f);
-        //AddF(role == Role.Hitter ? 1f : 0f);
+        AddF(role == Role.Passer ? 1f : 0f);
+        AddF(role == Role.Hitter ? 1f : 0f);
+        AddF(role == Role.Setter ? 1f : 0f);
+        AddF(role == Role.Generic ? 1f : 0f);
 
         float lastTouch = (envController.lastHitterAgent == this) ? 1f :
             (teammates.Contains(envController.lastHitterAgent)) ? -1f : 0f;
@@ -657,5 +674,4 @@ public class VolleyballAgent : Agent
 
         if (k.bKey.isPressed) da[4] = 1;      // bump
     }
-
 }

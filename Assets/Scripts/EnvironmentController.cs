@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.MLAgents;
+using Unity.VisualScripting;
 using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using static UnityEngine.InputSystem.LowLevel.InputStateHistory;
@@ -156,6 +157,7 @@ public class EnvironmentController : MonoBehaviour
 
         volleyballSettings = FindFirstObjectByType<VolleyballSettings>();
 
+        UpdateRoles();
         ResetScene();
     }
 
@@ -197,25 +199,6 @@ public class EnvironmentController : MonoBehaviour
         Physics.SyncTransforms();
     }
 
-    //private Vector3 GetSpawnPosition(Team team, int slot)
-    //{
-    //    // slot: 0 = left (-3), 1 = right (+3)
-    //    float x = (slot == 0) ? -3f : 3f;
-    //    float y = 0.5f;
-    //    float z = 0f;
-    //    if (team == Team.Blue)
-    //    {
-    //        z = -7f;
-    //    }
-    //    else if (team == Team.Red)
-    //    {
-    //        z = 7f;
-    //    }
-    //    else z = 0f;
-
-    //    return new Vector3(x, y, z);
-    //}
-
     private Vector3 GetSpawnPosition(Team team, int slot, int totalAgents)
     {
         float courtWidth = 6f; // adjust as needed
@@ -242,62 +225,208 @@ public class EnvironmentController : MonoBehaviour
 
     void UpdateRoles()
     {
-        // work per side
-        //AssignRoles(Team.Blue);
-        //AssignRoles(Team.Red);
+        AssignRoles(Team.Blue);
+        AssignRoles(Team.Red);
     }
 
     void AssignRoles(Team team)
     {
-        // 1. Grab both agents for the team
+        // Get all agents on the specified team, sorted by their order in AgentsList
         var agents = AgentsList.FindAll(a => a.teamId == team);
-        if (agents.Count != 2) return;
 
-        // 2. Compute predicted landing
-        Vector2 landingXZ = new Vector2(predictedLanding.x, predictedLanding.z);
-
-        // 3. Check if the ball is landing on this team's side
-        bool ballOnOurSide = (team == Team.Blue)
-            ? predictedLanding.z < 0f   // blue court is z < 0
-            : predictedLanding.z > 0f;  // red court is z > 0
-
-        if (!ballOnOurSide)
+        // Role order: 1st=Hitter, 2nd=Setter, 3rd=Passer, 4th=Hitter, 5th/6th=Passer, others=Generic
+        for (int i = 0; i < agents.Count; i++)
         {
-            agents[0].role = Role.Generic;
-            agents[1].role = Role.Generic;
-            return;
-        }
-
-        // 4. Calculate distances in XZ plane
-        float d0 = (new Vector2(agents[0].transform.localPosition.x, agents[0].transform.localPosition.z) - landingXZ).sqrMagnitude;
-        float d1 = (new Vector2(agents[1].transform.localPosition.x, agents[1].transform.localPosition.z) - landingXZ).sqrMagnitude;
-
-        // 5. Tie-break if agents are too close
-        if (Mathf.Abs(d0 - d1) < roleTieEpsilon)
-        {
-            if (Random.value < 0.5f)
+            switch (i)
             {
-                d0 = 0f; d1 = 1f;
+                case 0:
+                    agents[i].role = Role.Hitter;
+                    break;
+                case 1:
+                    agents[i].role = Role.Setter;
+                    break;
+                case 2:
+                    agents[i].role = Role.Passer;
+                    break;
+                case 3:
+                    agents[i].role = Role.Hitter;
+                    break;
+                case 4:
+                case 5:
+                    agents[i].role = Role.Passer;
+                    break;
+                default:
+                    agents[i].role = Role.Generic;
+                    break;
             }
-            else
-            {
-                d0 = 1f; d1 = 0f;
-            }
-        }
-
-        // 6. Closest = Hitter, Farther = Passer (or vice versa as you want)
-        if (d0 < d1)
-        {
-            agents[0].role = Role.Hitter;
-            agents[1].role = Role.Passer;
-        }
-        else
-        {
-            agents[0].role = Role.Passer;
-            agents[1].role = Role.Hitter;
         }
     }
 
+    void RoleSpecificRewarding (VolleyballAgent agent, Team agentTeam, int numTouches, TouchType touchType)
+    {
+        switch (agent.role)
+        {
+            case Role.Hitter:
+                RewardHitter(agent, agentTeam, numTouches, touchType);
+                break;
+            case Role.Setter:
+                RewardSetter(agent, agentTeam, numTouches, touchType);
+                break;
+            case Role.Passer:
+                RewardPasser(agent, agentTeam, numTouches, touchType);
+                break;
+            case Role.Generic:
+                RewardPasser(agent, agentTeam, numTouches, touchType);
+                break;
+        }
+    }
+
+    void RewardHitter (VolleyballAgent agent, Team agentTeam, int numTouches, TouchType touchType)
+    {
+        switch (touchType)
+        {
+            case TouchType.Spike:
+                switch (numTouches)
+                {
+                    case 1:
+                        agent.AddReward(0.0001f);
+                        break;
+                    case 2:
+                        agent.AddReward(0.001f);
+                        break;
+                    case 3:
+                        agent.AddReward(0.02f);
+                        break;
+                }
+                break;
+            case TouchType.Set:
+                switch (numTouches)
+                {
+                    case 1:
+                        agent.AddReward(0.001f);
+                        break;
+                    case 2:
+                        agent.AddReward(-0.01f);
+                        break;
+                    case 3:
+                        agent.AddReward(0.001f);
+                        break;
+                }
+                break;
+            case TouchType.Bump:
+                switch (numTouches)
+                {
+                    case 1:
+                        agent.AddReward(0.002f);
+                        break;
+                    case 2:
+                        agent.AddReward(-0.01f);
+                        break;
+                    case 3:
+                        agent.AddReward(0.001f);
+                        break;
+                }
+                break;
+        }
+    }
+
+    void RewardSetter(VolleyballAgent agent, Team agentTeam, int numTouches, TouchType touchType)
+    {
+        switch (touchType)
+        {
+            case TouchType.Spike:
+                switch (numTouches)
+                {
+                    case 1:
+                        agent.AddReward(-0.01f);
+                        break;
+                    case 2:
+                        agent.AddReward(0.0005f);
+                        break;
+                    case 3:
+                        agent.AddReward(0.001f);
+                        break;
+                }
+                break;
+            case TouchType.Set:
+                switch (numTouches)
+                {
+                    case 1:
+                        agent.AddReward(0.0005f);
+                        break;
+                    case 2:
+                        agent.AddReward(0.02f);
+                        break;
+                    case 3:
+                        agent.AddReward(0.001f);
+                        break;
+                }
+                break;
+            case TouchType.Bump:
+                switch (numTouches)
+                {
+                    case 1:
+                        agent.AddReward(0.003f);
+                        break;
+                    case 2:
+                        agent.AddReward(0.01f);
+                        break;
+                    case 3:
+                        agent.AddReward(0.001f);
+                        break;
+                }
+                break;
+        }
+    }
+
+    void RewardPasser(VolleyballAgent agent, Team agentTeam, int numTouches, TouchType touchType)
+    {
+        switch (touchType)
+        {
+            case TouchType.Spike:
+                switch (numTouches)
+                {
+                    case 1:
+                        agent.AddReward(-0.01f);
+                        break;
+                    case 2:
+                        agent.AddReward(0.0005f);
+                        break;
+                    case 3:
+                        agent.AddReward(0.002f);
+                        break;
+                }
+                break;
+            case TouchType.Set:
+                switch (numTouches)
+                {
+                    case 1:
+                        agent.AddReward(0.005f);
+                        break;
+                    case 2:
+                        agent.AddReward(0.005f);
+                        break;
+                    case 3:
+                        agent.AddReward(0.001f);
+                        break;
+                }
+                break;
+            case TouchType.Bump:
+                switch (numTouches)
+                {
+                    case 1:
+                        agent.AddReward(0.02f);
+                        break;
+                    case 2:
+                        agent.AddReward(0.005f);
+                        break;
+                    case 3:
+                        agent.AddReward(0.005f);
+                        break;
+                }
+                break;
+        }
+    }
 
     // -----------------------------------------------------------------------------
     //  ResetScene – full rally reset (agents, touches, ball)
@@ -365,7 +494,7 @@ public class EnvironmentController : MonoBehaviour
         }
         else
         {
-            ballSpawnSide = (nextServer == Team.Blue) ? -1 : 1;
+            ballSpawnSide = (nextServer == Team.Blue) ? 1 : -1; //SWAPPED LOSING TEAM SERVES
         }
 
         float xLocal = Random.Range(-2f, 2f); // Random X between -2 and +2
@@ -417,11 +546,6 @@ public class EnvironmentController : MonoBehaviour
         float baseReward = 1f;
         AddTeamReward(winner, baseReward);
         AddTeamReward(OpponentOf(winner), -baseReward);
-
-        if (lastHitterAgent != null && lastHitWasSpike)
-        {
-            lastHitterAgent.AddReward(0.3f); // bonus for winning with a spike
-        }
 
         // 2) next rally serves from the winning side
         FlashFloor(winner);
@@ -526,12 +650,11 @@ public class EnvironmentController : MonoBehaviour
                     if (!ballPassedOverNet)
                     {
                         ballPassedOverNet = true;
-                        //UpdateRoles();
 
                         if (lastHitterAgent != null)
                         {
                             int touches = (lastHitterAgent.teamId == Team.Blue) ? touchesBlue : touchesRed;
-                            AddTeamReward(lastHitterAgent.teamId, 0.01f * touches);
+                            AddTeamReward(lastHitterAgent.teamId, 0.005f * touches);
                         }
 
                         D("PassOverNet – flag set true");
@@ -544,7 +667,7 @@ public class EnvironmentController : MonoBehaviour
     // ============================================================================
     //  REGISTER-TOUCH  – call from agent collider or VolleyballController
     // ============================================================================
-    public void RegisterTouch(VolleyballAgent agent, bool wasSpike)
+    public void RegisterTouch(VolleyballAgent agent, TouchType touchType)
     {
         if (agent == null) return;
 
@@ -578,15 +701,15 @@ public class EnvironmentController : MonoBehaviour
             return;                                  // rally ended
         }
 
-        // --- SPIKE-ON-SPIKE FAULT --- (add this block here)
-        if (lastHitWasSpike && wasSpike)
+        // --- SPIKE-ON-SPIKE FAULT ---
+        if (lastHitWasSpike && touchType == TouchType.Spike)
         {
             D($"Spike-on-spike by {agent.teamId}: rally ended");
-            AwardFaultAgainst(agent.teamId); // Or: AwardFaultAgainst(agent.teamId); or make a special method
+            AwardFaultAgainst(agent.teamId);
             return;
         }
 
-        lastHitWasSpike = wasSpike;
+        lastHitWasSpike = touchType == TouchType.Spike;
 
         /*------------------------------------------------------------------
          * 3)  Legal touch – bookkeeping
@@ -624,11 +747,14 @@ public class EnvironmentController : MonoBehaviour
         /*------------------------------------------------------------------
          * 5)  Rally continues – do NOT touch ballPassedOverNet here
          *-----------------------------------------------------------------*/
+
+        RoleSpecificRewarding(agent, agent.teamId, touchesSoFar, touchType);
     }
 
-    // ============================================================================
-    //  ACTIVATE-BALL-FROM-SERVE  – first legal contact of the rally
-    // ============================================================================
+    /// <summary>
+    /// Activates the ball after a frozen serve on first touch
+    /// </summary>
+    /// <param name="toucher">Agent that touched the ball</param>
     public void ActivateBallFromServe(VolleyballAgent toucher)
     {
         if (!isBallFrozen) return;          // already active – nothing to do
@@ -651,9 +777,10 @@ public class EnvironmentController : MonoBehaviour
         Physics.SyncTransforms();           // make PhysX pick up the changes NOW
     }
 
-    // ============================================================================
-    //  UPDATE-LAST-HITTER  – call only after verifying the touch was legal
-    // ============================================================================
+    /// <summary>
+    /// Updates the last hitter info
+    /// </summary>
+    /// <param name="agent">Agent that touched the ball</param>
     void UpdateLastHitter(VolleyballAgent agent)
     {
         if (agent == null) return;
@@ -665,6 +792,11 @@ public class EnvironmentController : MonoBehaviour
         D($"UpdateLastHitter -> {lastHitter}");
     }
 
+    /// <summary>
+    /// Awards all agents on a team with the specified reward
+    /// </summary>
+    /// <param name="team">Rewarded team</param>
+    /// /// <param name="reward">Reward value</param>
     public void AddTeamReward(Team team, float reward)
     {
         foreach (var agent in AgentsList.Where(a => a.teamId == team))
@@ -699,6 +831,11 @@ public class EnvironmentController : MonoBehaviour
 
         floorFlashCo = StartCoroutine(FloorFlashRoutine(mat, seconds));
     }
+    /// <summary>
+    /// Coroutine that handles the floor flash timing
+    /// </summary>
+    /// <param name="flashMat">Material to be used for flash</param>
+    /// <param name="duration">How long the flash should last</param>
 
     private IEnumerator FloorFlashRoutine(Material flashMat, float duration)
     {

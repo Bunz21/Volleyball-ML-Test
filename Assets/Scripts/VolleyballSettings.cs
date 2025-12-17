@@ -7,8 +7,8 @@ public class VolleyballSettings : MonoBehaviour
     public float agentJumpHeight = 3.5f;
     public float agentJumpVelocity = 600f;
     public float agentJumpVelocityMaxChange = 10f;
-    public float spikePower = 20; // TEST
-    public float bumpPower = 20f;   // TEST
+    public float spikePower = 15; // TEST
+    public float bumpPower = 15f;   // TEST
 
     // Slows down strafe & backward movement
     public float speedReductionFactor = 0.75f;
