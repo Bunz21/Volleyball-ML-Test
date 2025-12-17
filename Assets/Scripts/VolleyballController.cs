@@ -32,7 +32,7 @@ public class VolleyballController : MonoBehaviour
         if (agent != null)
         {
             envController.D("COLLIDE " + agent.teamId + " AGENT");
-            envController.RegisterTouch(agent, agent.isSpiking);   // will un-freeze the ball
+            envController.RegisterTouch(agent, agent.isSpiking ? TouchType.Spike : (agent.isBumping ? TouchType.Set : TouchType.Bump));   // will un-freeze the ball
             return;                               // nothing else to do
         }
 
