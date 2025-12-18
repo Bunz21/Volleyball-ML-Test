@@ -28,8 +28,8 @@ public class VolleyballAgent : Agent
     [SerializeField] private GameObject area;
     [SerializeField] private List<VolleyballAgent> teammates;
     [SerializeField] private List<VolleyballAgent> opponents;
-    [SerializeField] private VolleyballSettings volleyballSettings; // Allow Inspector hookup
-    [HideInInspector] public EnvironmentController envController;   // Already there? Keep it.
+    [SerializeField] private VolleyballSettings volleyballSettings;
+    [HideInInspector] public EnvironmentController envController;
     [HideInInspector] public Role role = Role.Generic;
     const int MAX_TEAMMATES = 5;   // For 6 per team, not counting self
     const int MAX_OPPONENTS = 6;   // 6v6

@@ -5721,9 +5721,14 @@ MonoBehaviour:
   redGoal: {fileID: 7090448200735215638}
   net: {fileID: 6346082201770604593}
   MaxEnvironmentSteps: 5000
+  blueField: {fileID: 6356911934796212663}
+  redField: {fileID: 204474434199989051}
   blueGoalMaterial: {fileID: 2100000, guid: 8340843852529124595a90fd0b2d0004, type: 2}
   redGoalMaterial: {fileID: 2100000, guid: c80b5688e120df54e987d26e3aced0f2, type: 2}
   defaultMaterial: {fileID: 2100000, guid: 6eecaeb456bdab9459ef9cffee268819, type: 2}
+  hitterMaterial: {fileID: 2100000, guid: b4725fd387978ae44b133fc634ba0c88, type: 2}
+  setterMaterial: {fileID: 2100000, guid: 6d765131281b8a4468b4e32c1ec10e5f, type: 2}
+  passerMaterial: {fileID: 2100000, guid: f389037e8ddbb6a48ae425bfcb3377ba, type: 2}
   AgentsList: []
   touchesBlue: 0
   touchesRed: 0
@@ -8700,6 +8705,14 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
+      propertyPath: redField
+      value: 
+      objectReference: {fileID: 204474434199989051}
+    - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
+      propertyPath: blueField
+      value: 
+      objectReference: {fileID: 6356911934796212663}
+    - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
       propertyPath: bumpPower
       value: 15
       objectReference: {fileID: 0}
@@ -8715,6 +8728,18 @@ PrefabInstance:
       propertyPath: agentRunSpeed
       value: 1.25
       objectReference: {fileID: 0}
+    - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
+      propertyPath: hitterMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: b4725fd387978ae44b133fc634ba0c88, type: 2}
+    - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
+      propertyPath: passerMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: f389037e8ddbb6a48ae425bfcb3377ba, type: 2}
+    - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
+      propertyPath: setterMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 6d765131281b8a4468b4e32c1ec10e5f, type: 2}
     - target: {fileID: 4185312369993791717, guid: 18a6eef576535bb418622712a2fb3fb1, type: 3}
       propertyPath: agentJumpHeight
       value: 3.5

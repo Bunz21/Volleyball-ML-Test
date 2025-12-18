@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Unity.MLAgents;
 using Unity.VisualScripting;
 using UnityEditor.PackageManager.Requests;
@@ -54,10 +55,17 @@ public class EnvironmentController : MonoBehaviour
     private Renderer redGoalRenderer;
     private VolleyballSettings volleyballSettings;
 
+    [SerializeField] private GameObject blueField;
+    [SerializeField] private GameObject redField;
+
     //- Materials ------------------------------------------------------
     public Material blueGoalMaterial;
     public Material redGoalMaterial;
     public Material defaultMaterial;
+
+    public Material hitterMaterial;
+    public Material setterMaterial;
+    public Material passerMaterial;
 
     //– Collections -----------------------------------------------------
     public List<VolleyballAgent> AgentsList = new();   // all agents
@@ -91,6 +99,12 @@ public class EnvironmentController : MonoBehaviour
     private int ballSpawnSide = -1;           // -1 blue court | 1 red court
     private int resetTimer;
     private bool isResettingRally = false;
+
+    private float blueZ = -7f;
+    private float redZ = 7f;
+    private float blueYaw = 0f;
+    private float redYaw = 180f;
+    private bool flipped = false;
 
     /********************************************************
      *  HELPERS
@@ -199,34 +213,101 @@ public class EnvironmentController : MonoBehaviour
         Physics.SyncTransforms();
     }
 
+    private void FlipSides() // BROKEN - SCORING DOES NOT WORK PROPERLY
+    {
+        if (Random.value < 0.3f)
+        {
+            float tempZ = blueZ;
+            float tempYaw = blueYaw;
+
+            blueZ = redZ;
+            blueYaw = redYaw;
+            redZ = tempZ;
+            redYaw = tempYaw;
+
+            // Flip Z for every child under blueField
+            foreach (Transform child in blueField.transform)
+            {
+                Vector3 pos = child.localPosition;
+                pos.z *= -1;
+                child.localPosition = pos;
+            }
+
+            // Flip Z for every child under redField
+            foreach (Transform child in redField.transform)
+            {
+                Vector3 pos = child.localPosition;
+                pos.z *= -1;
+                child.localPosition = pos;
+            }
+        }
+
+        if (blueZ == -7f)
+        {
+            flipped = false;
+        }
+        else
+        {
+            flipped = true;
+        }
+    }
+
     private Vector3 GetSpawnPosition(Team team, int slot, int totalAgents)
     {
         float courtWidth = 6f; // adjust as needed
         float x = -courtWidth / 2f + (courtWidth / (totalAgents - 1)) * slot;
         float y = 0.5f;
-        float z = (team == Team.Blue) ? -7f : 7f;
+        float z = (team == Team.Blue) ? blueZ : redZ;
         return new Vector3(x, y, z);
     }
 
     private Quaternion GetSpawnRotation(Team team)
     {
         // Blue faces +Z (0°), Red faces -Z (180°)
-        float yaw = (team == Team.Blue) ? 0f : 180f;
+        float yaw = (team == Team.Blue) ? blueYaw : redYaw;
         return Quaternion.Euler(0f, yaw, 0f);
     }
 
-    public Vector3 PredictLanding(Rigidbody rb)
-    {
-        float vy = rb.linearVelocity.y, y0 = rb.position.y;
-        float t = (vy + Mathf.Sqrt(vy * vy + 2 * Physics.gravity.y * -y0)) / -Physics.gravity.y;
-        return transform.InverseTransformPoint(
-            rb.position + rb.linearVelocity * t + 0.5f * Physics.gravity * t * t); // local
-    }
+    //public Vector3 PredictLanding(Rigidbody rb)
+    //{
+    //    float vy = rb.linearVelocity.y, y0 = rb.position.y;
+    //    float t = (vy + Mathf.Sqrt(vy * vy + 2 * Physics.gravity.y * -y0)) / -Physics.gravity.y;
+    //    return transform.InverseTransformPoint(
+    //        rb.position + rb.linearVelocity * t + 0.5f * Physics.gravity * t * t); // local
+    //}
 
     void UpdateRoles()
     {
         AssignRoles(Team.Blue);
         AssignRoles(Team.Red);
+    }
+
+    void ChangeBandColors(VolleyballAgent agent, Role role)
+    {
+        Transform headband = agent.transform.Find("AgentModel/Headband");
+
+        if (headband != null)
+        {
+            Renderer rend = headband.GetComponent<Renderer>();
+            if (rend != null)
+            {
+                switch (role)
+                {
+                    case Role.Hitter:
+                        rend.material = hitterMaterial;
+                        break;
+                    case Role.Setter:
+                        rend.material = setterMaterial;
+                        break;
+                    case Role.Passer:
+                        rend.material = passerMaterial;
+                        break;
+                    default:
+                        rend.material = passerMaterial;
+                        break;
+                }
+            }
+        }
     }
 
     void AssignRoles(Team team)
@@ -241,22 +322,28 @@ public class EnvironmentController : MonoBehaviour
             {
                 case 0:
                     agents[i].role = Role.Hitter;
+                    ChangeBandColors(agents[i], Role.Hitter);
                     break;
                 case 1:
                     agents[i].role = Role.Setter;
+                    ChangeBandColors(agents[i], Role.Setter);
                     break;
                 case 2:
                     agents[i].role = Role.Passer;
+                    ChangeBandColors(agents[i], Role.Passer);
                     break;
                 case 3:
                     agents[i].role = Role.Hitter;
+                    ChangeBandColors(agents[i], Role.Hitter);
                     break;
                 case 4:
                 case 5:
                     agents[i].role = Role.Passer;
+                    ChangeBandColors(agents[i], Role.Passer);
                     break;
                 default:
                     agents[i].role = Role.Generic;
+                    ChangeBandColors(agents[i], Role.Generic);
                     break;
             }
         }
@@ -448,6 +535,8 @@ public class EnvironmentController : MonoBehaviour
         /* ---------- 1. teleport / zero-out every agent ------------------------- */
         int blueSlot = 0, redSlot = 0;
 
+        FlipSides();
+
         foreach (var ag in AgentsList)
         {
             Team team = ag.teamId;
@@ -470,7 +559,7 @@ public class EnvironmentController : MonoBehaviour
                 rb.angularVelocity = Vector3.zero;
             }
 
-            ag.role = Role.Generic; // reset role
+            //ag.role = Role.Generic; // reset role
         }
 
         /* ---------- 2. reset the ball ---------- */
@@ -494,7 +583,10 @@ public class EnvironmentController : MonoBehaviour
         }
         else
         {
-            ballSpawnSide = (nextServer == Team.Blue) ? 1 : -1; //SWAPPED LOSING TEAM SERVES
+            if (!flipped)
+                ballSpawnSide = (nextServer == Team.Blue) ? -1 : 1;
+            else
+                ballSpawnSide = (nextServer == Team.Blue) ? 1 : -1;
         }
 
         float xLocal = Random.Range(-2f, 2f); // Random X between -2 and +2
@@ -635,8 +727,18 @@ public class EnvironmentController : MonoBehaviour
             case Event.PassOverNet:
                 {
                     // 1) Make sure the ball is now on the *opponent* side
-                    bool ballNowOnRedSide = ball.transform.position.z > 0f;
-                    bool ballNowOnBlueSide = ball.transform.position.z < 0f;
+                    bool ballNowOnRedSide;
+                    bool ballNowOnBlueSide;
+
+                    if (!flipped)
+                    {
+                        ballNowOnRedSide = ball.transform.position.z > 0f;
+                        ballNowOnBlueSide = ball.transform.position.z < 0f;
+                    } else
+                    {
+                        ballNowOnRedSide = ball.transform.position.z < 0f;
+                        ballNowOnBlueSide = ball.transform.position.z > 0f;
+                    }
 
                     Team hitter = lastHitterTeam; // who struck last
                     if ((hitter == Team.Blue && !ballNowOnRedSide) ||
