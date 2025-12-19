@@ -39,9 +39,10 @@ public class VolleyballAgent : Agent
     // --- COMPONENT REFERENCES ---
     public Rigidbody agentRb;
     private Renderer agentRenderer;
+    private bool collisionStay = false;
     private Color defaultColor;
     private static readonly Color spikeColor = new Color(0.5f, 0f, 0.5f); // purple (R,G,B)
-    private static readonly Color bumpColor = new Color(0f, 0.75f, 0f);
+    private static readonly Color setColor = new Color(0f, 0.75f, 0f);
     private BehaviorParameters behaviorParameters;
     private EnvironmentParameters resetParams;
 
@@ -62,11 +63,11 @@ public class VolleyballAgent : Agent
     private float spikeTimer = 0f;
     [SerializeField] private float spikeWindow = 0.5f;
 
-    // --- BUMP CONTROLS ---
-    private bool canBump = true;
-    public bool isBumping = false;
-    private float bumpTimer = 0f;
-    [SerializeField] private float bumpWindow = 0.5f;
+    // --- SET CONTROLS ---
+    private bool canSet = true;
+    public bool isSetting = false;
+    private float setTimer = 0f;
+    [SerializeField] private float setWindow = 0.5f;
 
     void Start()
     {
@@ -119,9 +120,9 @@ public class VolleyballAgent : Agent
         isSpiking = false;
         spikeTimer = 0f;
         canSpike = false;
-        isBumping = false;
-        bumpTimer = 0f;
-        canBump = true;
+        isSetting = false;
+        setTimer = 0f;
+        canSet = true;
     }
 
     /// <summary>
@@ -181,7 +182,7 @@ public class VolleyballAgent : Agent
         {
             if (envController != null)
             {
-                envController.RegisterTouch(this, isSpiking ? TouchType.Spike : (isBumping ? TouchType.Set : TouchType.Bump));
+                envController.RegisterTouch(this, DetermineTouchType(this));
             }
 
             if (isSpiking)
@@ -200,36 +201,44 @@ public class VolleyballAgent : Agent
                 spikeTimer = 0f;
             }
 
-            if (isBumping)
+            if (isSetting)
             {
-                float bumpPower = volleyballSettings.bumpPower; // e.g., 5–7
+                float setPower = volleyballSettings.setPower; // e.g., 5–7
                                                                 // 15% forward, 99% upward (parabolic)
-                Vector3 bumpDir = (transform.forward * 0.15f + Vector3.up * 1f).normalized;
-                Vector3 bumpVelocity = bumpDir * bumpPower;
+                Vector3 setDir = (transform.forward * 0.15f + Vector3.up * 1f).normalized;
+                Vector3 setVelocity = setDir * setPower;
 
-                ballRb.linearVelocity = bumpVelocity;
+                ballRb.linearVelocity = setVelocity;
 
-                isBumping = false;
-                bumpTimer = 0f;
+                isSetting = false;
+                setTimer = 0f;
             }
         }
 
         if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent") && agentRb != null && c.collider.gameObject != agentRb.gameObject)
         {
-            AddReward(-0.05f); // penalty on collision with teammate
+            AddReward(-0.025f); // penalty on collision with teammate
+            collisionStay = true;
         }
     }
 
-    void OnCollisionStay(Collision c)
+    //void OnCollisionStay(Collision c)
+    //{
+    //    foreach (VolleyballAgent a in teammates)
+    //    {
+    //        if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent") &&
+    //        a != null && c.collider.gameObject == a.gameObject)
+    //        {
+    //            AddReward(-0.03f); // small drain each physics step - doesn't work
+    //        }
+    //    }
+    //}
+
+    TouchType DetermineTouchType(VolleyballAgent agent)
     {
-        foreach (VolleyballAgent a in teammates)
-        {
-            if (c.collider.CompareTag("blueAgent") || c.collider.CompareTag("redAgent") &&
-            a != null && c.collider.gameObject == a.gameObject)
-            {
-                AddReward(-0.03f); // small drain each physics step - doesn't work
-            }
-        }
+        return this.isSpiking ? TouchType.Spike :
+               this.isSetting ? TouchType.Set :
+               TouchType.Bump;
     }
 
     /// <summary>
@@ -267,7 +276,7 @@ public class VolleyballAgent : Agent
         var rotateDirAction = act[1];
         var dirToGoSideAction = act[2];
         var jumpAction = act[3];
-        var bumpAction = act[4];
+        var setAction = act[4];
 
         if (dirToGoForwardAction == 1)
             dirToGo = (grounded ? 1f : 0.5f) * transform.forward * 1f;
@@ -318,24 +327,24 @@ public class VolleyballAgent : Agent
             isSpiking = true;
             spikeTimer = spikeWindow;
             canSpike = false;  // Disable until next jump
-        } else if (grounded && bumpAction == 1 && canBump)
+        } else if (grounded && setAction == 1 && canSet)
         {
-            isBumping = true;
-            bumpTimer = bumpWindow;
-            canBump = false;  // Disable until next grounded
+            isSetting = true;
+            setTimer = setWindow;
+            canSet = false;  // Disable until next grounded
         }
 
-        // Cancel bump if jump or spike initiated
+        // Cancel set if jump or spike initiated
         if (!grounded || jumpAction == 1 || jumpAction == 2 || isSpiking)
         {
-            isBumping = false;
-            bumpTimer = 0f;
+            isSetting = false;
+            setTimer = 0f;
         }
 
-        // --- Clean canBump logic: ---
-        // Always reset canBump when grounded, not bumping, and not spiking
-        if (grounded && !isBumping && !isSpiking)
-            canBump = true;
+        // --- Clean canSet logic: ---
+        // Always reset canSet when grounded, not setting, and not spiking
+        if (grounded && !isSetting && !isSpiking)
+            canSet = true;
     }
 
     public override void OnActionReceived(ActionBuffers actionBuffers)
@@ -365,14 +374,14 @@ public class VolleyballAgent : Agent
             spikeTimer = 0f;
         }
 
-        // --- Bump State ---
-        if (isBumping && bumpTimer > 0f)
+        // --- Set State ---
+        if (isSetting && setTimer > 0f)
         {
-            bumpTimer -= Time.fixedDeltaTime;
-            if (bumpTimer <= 0f || !CheckIfGrounded())
+            setTimer -= Time.fixedDeltaTime;
+            if (setTimer <= 0f || !CheckIfGrounded())
             {
-                isBumping = false;
-                bumpTimer = 0f;
+                isSetting = false;
+                setTimer = 0f;
             }
         }
 
@@ -381,13 +390,19 @@ public class VolleyballAgent : Agent
         {
             agentRenderer.material.color =
                 isSpiking ? spikeColor :
-                isBumping ? bumpColor :
+                isSetting ? setColor :
                 defaultColor;
         }
 
-        // --- Bump Ability Reset (when grounded and not bumping and not spiking) ---
-        if (CheckIfGrounded() && !isBumping && !isSpiking)
-            canBump = true;
+        // --- Set Ability Reset (when grounded and not setting and not spiking) ---
+        if (CheckIfGrounded() && !isSetting && !isSpiking)
+            canSet = true;
+
+        // --- Collision stay penalty ---
+        if (collisionStay)
+        {
+            AddReward(-0.005f); // small penalty for staying in collision
+        }
 
         // --- Movement ---
         MoveAgent(actionBuffers.DiscreteActions);
@@ -587,7 +602,7 @@ public class VolleyballAgent : Agent
             if (a != null)
             {
                 AddF(a.isSpiking ? 1f : 0f);
-                AddF(a.isBumping ? 1f : 0f);
+                AddF(a.isSetting ? 1f : 0f);
             }
             else
             {
@@ -672,6 +687,6 @@ public class VolleyballAgent : Agent
 
         if (k.pKey.isPressed) da[3] = 2;   // spike
 
-        if (k.bKey.isPressed) da[4] = 1;      // bump
+        if (k.bKey.isPressed) da[4] = 1;      // set
     }
 }

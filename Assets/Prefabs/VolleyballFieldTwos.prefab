@@ -5723,6 +5723,8 @@ MonoBehaviour:
   MaxEnvironmentSteps: 5000
   blueField: {fileID: 6356911934796212663}
   redField: {fileID: 204474434199989051}
+  blueDetector: {fileID: 2539704481717024791}
+  redDetector: {fileID: 5413703326584714938}
   blueGoalMaterial: {fileID: 2100000, guid: 8340843852529124595a90fd0b2d0004, type: 2}
   redGoalMaterial: {fileID: 2100000, guid: c80b5688e120df54e987d26e3aced0f2, type: 2}
   defaultMaterial: {fileID: 2100000, guid: 6eecaeb456bdab9459ef9cffee268819, type: 2}

@@ -58,6 +58,9 @@ public class EnvironmentController : MonoBehaviour
     [SerializeField] private GameObject blueField;
     [SerializeField] private GameObject redField;
 
+    [SerializeField] private GameObject blueDetector;
+    [SerializeField] private GameObject redDetector;
+
     //- Materials ------------------------------------------------------
     public Material blueGoalMaterial;
     public Material redGoalMaterial;
@@ -235,6 +238,22 @@ public class EnvironmentController : MonoBehaviour
 
             // Flip Z for every child under redField
             foreach (Transform child in redField.transform)
+            {
+                Vector3 pos = child.localPosition;
+                pos.z *= -1;
+                child.localPosition = pos;
+            }
+
+            // Flip Z for every child under blueDetector
+            foreach (Transform child in blueDetector.transform)
+            {
+                Vector3 pos = child.localPosition;
+                pos.z *= -1;
+                child.localPosition = pos;
+            }
+
+            // Flip Z for every child under redDetector
+            foreach (Transform child in redDetector.transform)
             {
                 Vector3 pos = child.localPosition;
                 pos.z *= -1;
@@ -641,8 +660,9 @@ public class EnvironmentController : MonoBehaviour
 
         // 2) next rally serves from the winning side
         FlashFloor(winner);
-        nextServer = winner;
+        nextServer = OpponentOf(winner);
 
+        StatsLogger.LogStats(AgentsList);
         // 3) finish episodes so stats roll up
         foreach (VolleyballAgent a in AgentsList)
         {
